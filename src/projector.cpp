@@ -509,14 +509,22 @@ float Projector::calcLowestDisplayTrafoOversampling() const
  */
 void Projector::fitViewOffset()
 {
-    if (fovCentHor.x < 2*M_PI)  //Limit horizontal view angle offset such that no point in display projection is beyond available FOV
+    //Lambda for sane, rounded comparison of two floats within 4 decimal places
+    auto roundedCompareSmaller = [](float pLeft, float pRight) -> bool
+    {
+        return (static_cast<int>(pLeft * 10000) + 1) < static_cast<int>(pRight * 10000);
+    };
+
+    //Limit horizontal view angle offset such that no point in display projection is beyond available FOV;
+    //in case of a 360 degree panorama do not limit horizontal view angle offset, but keep it within [0, 2*PI)
+    if (roundedCompareSmaller(fovCentHor.x, 2*M_PI))
     {
         if (viewOffsetPhi < displayFOV.x / 2.)
             viewOffsetPhi = displayFOV.x / 2.;
         else if (viewOffsetPhi > fovCentHor.x - displayFOV.x / 2.)
             viewOffsetPhi = fovCentHor.x - displayFOV.x / 2.;
     }
-    else                        //In case of a 360 degree panorama do not limit horizontal view angle offset, but keep it within [0, 2*PI)
+    else
     {
         if (viewOffsetPhi < 0)
             viewOffsetPhi += 2*M_PI;

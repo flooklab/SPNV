@@ -57,7 +57,7 @@ inline constexpr char programName[] = "SPNV";                       ///< Name of
 
 inline constexpr int spnvVersionMajor = 0;                          ///< Program version major number.
 inline constexpr int spnvVersionMinor = 1;                          ///< Program version minor number.
-inline constexpr int spnvVersionPatch = 0;                          ///< Program version patch number.
+inline constexpr int spnvVersionPatch = 1;                          ///< Program version patch number.
 inline constexpr ReleaseType spnvVersionType = ReleaseType::Normal; ///< Program version release type.
 
 std::string toString();                                             ///< Get the program version formatted as string.

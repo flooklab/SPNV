@@ -4,7 +4,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose type of build (Debug or Release)")
 endif(NOT CMAKE_BUILD_TYPE)
 
-project(SPNV VERSION 0.1.0 LANGUAGES CXX)
+project(SPNV VERSION 0.1.1 LANGUAGES CXX)
 
 set(EXECUTABLE_NAME ${PROJECT_NAME})
 

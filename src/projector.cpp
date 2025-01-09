@@ -510,6 +510,9 @@ float Projector::calcLowestDisplayTrafoOversampling() const
  * display projection within the available field of view of the panorama scene (no margins).
  *
  * Clips the current view angle offset at these values. Also ensures 'phi' within [0, 2*pi).
+ *
+ * Additionally, centers 'phi' if the horizontal field of view of the display projection
+ * is actually wider than the total available field of view of the panorama scene.
  */
 void Projector::fitViewOffset()
 {
@@ -523,7 +526,9 @@ void Projector::fitViewOffset()
     //in case of a 360 degree panorama do not limit horizontal view angle offset, but keep it within [0, 2*PI)
     if (roundedCompareSmaller(fovCentHor.x, 2*M_PI))
     {
-        if (viewOffsetPhi < displayFOV.x / 2.)
+        if (fovCentHor.x < displayFOV.x)
+            viewOffsetPhi = fovCentHor.x / 2.;  //Horizontally center the scene if display FOV is wider than scene FOV
+        else if (viewOffsetPhi < displayFOV.x / 2.)
             viewOffsetPhi = displayFOV.x / 2.;
         else if (viewOffsetPhi > fovCentHor.x - displayFOV.x / 2.)
             viewOffsetPhi = fovCentHor.x - displayFOV.x / 2.;

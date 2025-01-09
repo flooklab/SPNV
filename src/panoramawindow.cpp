@@ -95,6 +95,8 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
 
     createWindow(fullscreenMode);
 
+    sf::Vector2u currentWindowSize = window.getSize();
+
     //Initialize panorama scene with current window size and reset perspective
 
     updateDisplaySize();
@@ -115,6 +117,24 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
     sf::Vector2i dragCurrentMousePos;
     double dragInitialViewOffsetTheta = 0;
     double dragInitialViewOffsetPhi = 0;
+    bool dragWaitForWrap = false;   //Skip mouse move events until current event's mouse position matches set mouse position again
+
+    //Lambda for enabling view angle manipulation via mouse drag
+    auto enableMouseDragging = [&]() -> void
+    {
+        //Set mouse drag flag
+        mouseDragging = true;
+
+        //Remember current perspective, current mouse position and associated view angle in order to
+        //be able to calculate and set a relative perspective change from a changing mouse position
+
+        dragCurrentMousePos = sf::Mouse::getPosition(window);
+
+        dragInitialMouseAngle = projector->getViewAngle(dragCurrentMousePos);
+
+        dragInitialViewOffsetPhi = projector->getOffsetPhi();
+        dragInitialViewOffsetTheta = projector->getOffsetTheta();
+    };
 
     //Reset locked theta angle mouse drag mode
     mouseDragLockThetaAngle = false;
@@ -162,21 +182,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                     //Enable view angle manipulation via mouse movement, which will be handled below the event loop each time when all
                     //pending events have been processed (this groups/ignores small consecutive move events from continuous mouse movement)
                     if (event.mouseButton.button == sf::Mouse::Button::Left)
-                    {
-                        //Set mouse drag flag
-                        mouseDragging = true;
-
-                        //Remember current perspective, current mouse position and associated view angle in order to
-                        //be able to calculate and set a relative perspective change from a changing mouse position
-
-                        dragCurrentMousePos.x = event.mouseButton.x;
-                        dragCurrentMousePos.y = event.mouseButton.y;
-
-                        dragInitialMouseAngle = projector->getViewAngle(dragCurrentMousePos);
-
-                        dragInitialViewOffsetPhi = projector->getOffsetPhi();
-                        dragInitialViewOffsetTheta = projector->getOffsetTheta();
-                    }
+                        enableMouseDragging();
                     break;
                 }
                 case sf::Event::MouseButtonReleased:
@@ -189,9 +195,19 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                 case sf::Event::MouseMoved:
                 {
                     //Capture current mouse position if view angle manipulation via mouse movement is enabled;
-                    //actual movement logic happens below event loop
+                    //actual movement logic happens below the event loop
                     if (mouseDragging)
                     {
+                        //After the mouse left a window edge and hence was reset to the opposite edge, need to skip
+                        //pending mouse move events until current event's mouse position matches set mouse position again
+                        if (dragWaitForWrap)
+                        {
+                            if (dragCurrentMousePos.x == event.mouseMove.x && dragCurrentMousePos.y == event.mouseMove.y)
+                                dragWaitForWrap = false;
+                            else
+                                break;
+                        }
+
                         dragCurrentMousePos.x = event.mouseMove.x;
                         dragCurrentMousePos.y = event.mouseMove.y;
                     }
@@ -303,6 +319,9 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                             //Create new window
                             createWindow(fullscreenMode);
 
+                            //Update window size
+                            currentWindowSize = window.getSize();
+
                             //Update title and display
                             updateWindowTitle();
                             renderPanoramaView();
@@ -330,6 +349,8 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
         {
             windowResizing = false;
 
+            currentWindowSize = window.getSize();
+
             updateDisplaySize();
 
             renderPanoramaView();
@@ -353,6 +374,32 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
             projector->updateView(projector->getZoom(), dragInitialViewOffsetPhi + deltaPhi, dragInitialViewOffsetTheta + deltaTheta);
 
             renderPanoramaView();
+
+            //If the mouse leaves a window edge while dragging, move the mouse to the opposite
+            //edge and reset the dragging origin in order to allow for a continuous movement
+            if (dragCurrentMousePos.x <= 0 || static_cast<unsigned int>(dragCurrentMousePos.x) >= currentWindowSize.x-1 ||
+                    dragCurrentMousePos.y <= 0 || static_cast<unsigned int>(dragCurrentMousePos.y) >= currentWindowSize.y-1)
+            {
+                sf::Vector2i mouseOffs;
+
+                if (dragCurrentMousePos.x <= 0)
+                    mouseOffs.x = static_cast<int>(currentWindowSize.x)-2;
+                else if (static_cast<unsigned int>(dragCurrentMousePos.x) >= currentWindowSize.x-1)
+                    mouseOffs.x = -static_cast<int>(currentWindowSize.x)+2;
+
+                if (dragCurrentMousePos.y <= 0)
+                    mouseOffs.y = static_cast<int>(currentWindowSize.y)-2;
+                else if (static_cast<unsigned int>(dragCurrentMousePos.y) >= currentWindowSize.y-1)
+                    mouseOffs.y = -static_cast<int>(currentWindowSize.y)+2;
+
+                sf::Mouse::setPosition(dragCurrentMousePos + mouseOffs, window);
+
+                //Reset dragging origin
+                enableMouseDragging();
+
+                //Skip pending mouse move events until event triggered by sf::Mouse::setPosition is reached
+                dragWaitForWrap = true;
+            }
         }
     }
 

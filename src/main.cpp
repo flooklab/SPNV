@@ -20,12 +20,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
-#include "version.h"
-#include "scenemetadata.h"
 #include "panoramawindow.h"
+#include "scenemetadata.h"
+#include "version.h"
 
-#include <iostream>
+#include <cstdlib>
+#include <exception>
 #include <filesystem>
+#include <iostream>
+#include <string>
+#include <vector>
 
 /// \file
 ///
@@ -103,7 +107,7 @@ int main(int argc, const char* argv[])
     else if (args.size() == 3)
     {
         if (args[2].find("--pto=") != 0)
-            goto __Wrong_Cmd_Arg;
+            goto _wrongCmdArg;
 
         picFileName = args[1];
         ptoFileName = args[2].substr(6);
@@ -111,14 +115,14 @@ int main(int argc, const char* argv[])
     else if (args.size() == 4)
     {
         if (args[2] != "-p")
-            goto __Wrong_Cmd_Arg;
+            goto _wrongCmdArg;
 
         picFileName = args[1];
         ptoFileName = args[3];
     }
     else
     {
-        __Wrong_Cmd_Arg:
+        _wrongCmdArg:
         std::cerr<<"ERROR: Wrong or missing command line arguments!\n"<<std::endl;
 
         printHelp();

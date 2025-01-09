@@ -20,18 +20,19 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
-#ifndef PROJECTOR_H
-#define PROJECTOR_H
+#ifndef SPNV_PROJECTOR_H
+#define SPNV_PROJECTOR_H
 
 #include "scenemetadata.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Config.hpp>
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/System/Vector2.hpp>
 
-#include <cmath>
 #include <array>
-#include <vector>
-#include <string>
 #include <functional>
+#include <string>
+#include <vector>
 
 /*!
  * \brief Panorama picture loading and projection onto virtual camera for varying perspectives.
@@ -109,10 +110,10 @@ private:
     void updateDisplayData();                               ///< Project current panorama sphere perspective to display projection buffer.
     void mapPicToPanoSphere();                              ///< Project the loaded picture onto the panorama sphere.
     //
-    inline void interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                                 std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
-                                 float pTLx, float pTLy, float pBRx, float pBRy);   ///< \brief Interpolate target pixel color from
-                                                                                    ///  rectangle in source image by area weighting.
+    void interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
+                          std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
+                          float pTLx, float pTLy, float pBRx, float pBRy);      ///< \brief Interpolate target pixel color from
+                                                                                ///  rectangle in source image by area weighting.
 
 private:
     sf::Image pic;                                          //Loaded panorama picture
@@ -159,4 +160,4 @@ private:
     float panoSphereRemapHystMaxF;      //Max. f beyond which oversampl. cannot be restored by pano. sphere re-calc. (limited picture res.)
 };
 
-#endif // PROJECTOR_H
+#endif // SPNV_PROJECTOR_H

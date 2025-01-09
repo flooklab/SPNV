@@ -20,8 +20,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef SPNV_VERSION_H
+#define SPNV_VERSION_H
 
 #define SPNV_PROGRAM_NAME "SPNV"
 
@@ -29,4 +29,4 @@
 #define SPNV_VERSION_MINOR "1"
 #define SPNV_VERSION_PATCH "0"
 
-#endif // VERSION_H
+#endif // SPNV_VERSION_H

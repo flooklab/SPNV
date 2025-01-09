@@ -22,16 +22,27 @@
 
 #include "scenemetadata.h"
 
+#include <cmath>
+#include <cstdlib>
+#include <exception>
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+
 /*!
  * \brief Construct meta data for an "empty" panorama scene (for loading useful values from file later).
  *
- * Sets projection type to PanoramaProjection::_CENTRAL_CYLINDRICAL and all sizes and positions to 0.
+ * Sets projection type to PanoramaProjection::CentralCylindrical and all sizes and positions to 0.
  * See also SceneMetaData(PanoramaProjection, sf::Vector2i, sf::Vector2f, sf::Vector2i, sf::Vector2i).
  *
  * Useful meta data can be loaded from file via loadFromPTOFile() or loadFromPNVFile().
  */
 SceneMetaData::SceneMetaData() :
-    SceneMetaData(PanoramaProjection::_CENTRAL_CYLINDRICAL, {0, 0}, {0, 0}, {0, 0}, {0, 0})
+    SceneMetaData(PanoramaProjection::CentralCylindrical, {0, 0}, {0, 0}, {0, 0}, {0, 0})
 {
 }
 
@@ -51,8 +62,8 @@ SceneMetaData::SceneMetaData() :
  * \param pCropPosTL Position in uncropped panorama picture reconstruction matching top left corner of actual panorama picture.
  * \param pCropPosBR Position in uncropped panorama picture reconstruction matching bottom right corner of actual panorama picture.
  */
-SceneMetaData::SceneMetaData(PanoramaProjection pProjectionType, sf::Vector2i pUncroppedSize,
-                             sf::Vector2f pUncroppedFOV, sf::Vector2i pCropPosTL, sf::Vector2i pCropPosBR) :
+SceneMetaData::SceneMetaData(const PanoramaProjection pProjectionType, const sf:: Vector2i pUncroppedSize,
+                             const sf::Vector2f pUncroppedFOV, const sf::Vector2i pCropPosTL, const sf::Vector2i pCropPosBR) :
     projectionType(pProjectionType),
     uncroppedSize(pUncroppedSize),
     uncroppedFOV(pUncroppedFOV),
@@ -212,13 +223,13 @@ bool SceneMetaData::loadFromPTOFile(const std::string& pFileName)
         //Need to calculate VFOV from other numbers (depends on projection type)
         if (proj == 1)
         {
-            tProjectionType = PanoramaProjection::_CENTRAL_CYLINDRICAL;
+            tProjectionType = PanoramaProjection::CentralCylindrical;
 
             vfov = 2.f * std::atan(hfov * h / w / 2.f);
         }
         else if (proj == 2)
         {
-            tProjectionType = PanoramaProjection::_EQUIRECTANGULAR;
+            tProjectionType = PanoramaProjection::Equirectangular;
 
             vfov = hfov * h / w;
         }
@@ -313,9 +324,9 @@ bool SceneMetaData::loadFromPNVFile(const std::string& pFileName)
 
         //Determine used panorama projection type
         if (substrProj == "CYL")
-            tProjectionType = PanoramaProjection::_CENTRAL_CYLINDRICAL;
+            tProjectionType = PanoramaProjection::CentralCylindrical;
         else if (substrProj == "EQR")
-            tProjectionType = PanoramaProjection::_EQUIRECTANGULAR;
+            tProjectionType = PanoramaProjection::Equirectangular;
         else
             throw std::runtime_error("Unsupported projection type!");
 
@@ -375,9 +386,9 @@ bool SceneMetaData::saveToPNVFile(const std::string& pFileName) const
 
         //Write main file content
 
-        if (projectionType == PanoramaProjection::_CENTRAL_CYLINDRICAL)
+        if (projectionType == PanoramaProjection::CentralCylindrical)
             file<<"CYL"<<",";
-        else if (projectionType == PanoramaProjection::_EQUIRECTANGULAR)
+        else if (projectionType == PanoramaProjection::Equirectangular)
             file<<"EQR"<<",";
         else
             file<<",";

@@ -22,6 +22,10 @@
 
 #include "projector.h"
 
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+
 /*!
  * \brief Constructor.
  *
@@ -102,7 +106,7 @@ Projector::Projector(const std::string& pFileName, const SceneMetaData& pSceneMe
  * \param pDisplaySize New size for display projection.
  * \param pForceAdjustResolution Force re-projection of panorama sphere (see updateDisplayFOV()).
  */
-void Projector::updateDisplaySize(sf::Vector2u pDisplaySize, bool pForceAdjustResolution)
+void Projector::updateDisplaySize(const sf::Vector2u pDisplaySize, const bool pForceAdjustResolution)
 {
     displaySize.x = static_cast<int>(pDisplaySize.x);
     displaySize.y = static_cast<int>(pDisplaySize.y);
@@ -132,7 +136,7 @@ void Projector::updateDisplaySize(sf::Vector2u pDisplaySize, bool pForceAdjustRe
  * \param pOffsetTheta New vertical view angle offset.
  * \param pForceAdjustResolution Force re-projection of panorama sphere if zoom is changed (see updateDisplayFOV()).
  */
-void Projector::updateView(float pZoom, float pOffsetPhi, float pOffsetTheta, bool pForceAdjustResolution)
+void Projector::updateView(float pZoom, const float pOffsetPhi, float pOffsetTheta, const bool pForceAdjustResolution)
 {
     if (pZoom == -1)
     {
@@ -173,7 +177,7 @@ void Projector::updateView(float pZoom, float pOffsetPhi, float pOffsetTheta, bo
  *
  * \param pForceAdjustResolution Force re-projection of panorama sphere if zoom is changed (see updateDisplayFOV()).
  */
-void Projector::centerHorizon(bool pForceAdjustResolution)
+void Projector::centerHorizon(const bool pForceAdjustResolution)
 {
     updateView(std::max(zoom, minZoomCentHor), viewOffsetPhi, 0, pForceAdjustResolution);
 }
@@ -233,7 +237,7 @@ float Projector::getNormalizedZoom() const
  * \param pHFOV Desired horizontal field of view.
  * \return Required zoom level.
  */
-float  Projector::getRequiredZoomFromHFOV(float pHFOV) const
+float  Projector::getRequiredZoomFromHFOV(const float pHFOV) const
 {
     float aspect = static_cast<float>(displaySize.x) / displaySize.y;
 
@@ -251,7 +255,7 @@ float  Projector::getRequiredZoomFromHFOV(float pHFOV) const
  * \param pVFOV Desired vertical field of view.
  * \return Required zoom level.
  */
-float  Projector::getRequiredZoomFromVFOV(float pVFOV) const
+float  Projector::getRequiredZoomFromVFOV(const float pVFOV) const
 {
     return std::tan(fovCentHor.y / 2.) / std::tan(pVFOV / 2.);
 }
@@ -267,7 +271,7 @@ float  Projector::getRequiredZoomFromVFOV(float pVFOV) const
  * \param pDisplayPosition Position in the display projection.
  * \return Corresponding view angle without offsets.
  */
-sf::Vector2f Projector::getViewAngle(sf::Vector2i pDisplayPosition) const
+sf::Vector2f Projector::getViewAngle(const sf::Vector2i pDisplayPosition) const
 {
     return {staticDisplayTrafoX(pDisplayPosition.x), staticDisplayTrafoY(pDisplayPosition.y, pDisplayPosition.x)};
 }
@@ -310,13 +314,13 @@ const std::vector<sf::Uint8>& Projector::getDisplayData() const
  */
 sf::Vector2f Projector::calcTopLeftFOV() const
 {
-    if (projectionType == SceneMetaData::PanoramaProjection::_CENTRAL_CYLINDRICAL)
+    if (projectionType == SceneMetaData::PanoramaProjection::CentralCylindrical)
     {
         return {picUncroppedFOV.x * picCropPosTL.x / picUncroppedSize.x, std::atan(std::tan(picUncroppedFOV.y / 2.f) /
                                                                                    (picUncroppedSize.y / 2.f) *
                                                                                    (picUncroppedSize.y / 2.f - picCropPosTL.y))};
     }
-    else if (projectionType == SceneMetaData::PanoramaProjection::_EQUIRECTANGULAR)
+    else if (projectionType == SceneMetaData::PanoramaProjection::Equirectangular)
     {
         return {picUncroppedFOV.x * picCropPosTL.x / picUncroppedSize.x, (picUncroppedFOV.y / 2.f) *
                     (picUncroppedSize.y / 2.f - picCropPosTL.y) / (picUncroppedSize.y / 2.f)};
@@ -336,13 +340,13 @@ sf::Vector2f Projector::calcTopLeftFOV() const
  */
 sf::Vector2f Projector::calcBottomRightFOV() const
 {
-    if (projectionType == SceneMetaData::PanoramaProjection::_CENTRAL_CYLINDRICAL)
+    if (projectionType == SceneMetaData::PanoramaProjection::CentralCylindrical)
     {
         return {picUncroppedFOV.x * picCropPosBR.x / picUncroppedSize.x, -std::atan(std::tan(picUncroppedFOV.y / 2.f) /
                                                                                     (picUncroppedSize.y / 2.f) *
                                                                                     (picCropPosBR.y - picUncroppedSize.y / 2.f))};
     }
-    else if (projectionType == SceneMetaData::PanoramaProjection::_EQUIRECTANGULAR)
+    else if (projectionType == SceneMetaData::PanoramaProjection::Equirectangular)
     {
         return {picUncroppedFOV.x * picCropPosBR.x / picUncroppedSize.x, -(picUncroppedFOV.y / 2.f) *
                     (picUncroppedSize.y / 2.f - (picUncroppedSize.y - picCropPosBR.y)) / (picUncroppedSize.y / 2.f)};
@@ -366,7 +370,7 @@ sf::Vector2f Projector::calcBottomRightFOV() const
  * \param pX Horizontal display position.
  * \return Corresponding 'phi' angle in the centered panorama sphere.
  */
-float Projector::staticDisplayTrafoX(int pX) const
+float Projector::staticDisplayTrafoX(const int pX) const
 {
     return std::atan2(static_cast<float>(pX) - static_cast<float>(displaySize.x) / 2., f);
 }
@@ -386,7 +390,7 @@ float Projector::staticDisplayTrafoX(int pX) const
  * \param pX Horizontal display position.
  * \return Corresponding 'theta' angle in the centered panorama sphere.
  */
-float Projector::staticDisplayTrafoY(int pY, int pX) const
+float Projector::staticDisplayTrafoY(const int pY, const int pX) const
 {
     return std::atan((static_cast<float>(pY) - static_cast<float>(displaySize.y) / 2.) / f *
                      std::sin(std::atan2(f, static_cast<float>(pX) - static_cast<float>(displaySize.x) / 2.)));
@@ -408,7 +412,7 @@ float Projector::staticDisplayTrafoY(int pY, int pX) const
  * \param pX Horizontal display position.
  * \return Corresponding horizontal panorama sphere buffer position.
  */
-float Projector::displayTrafoX(int pX) const
+float Projector::displayTrafoX(const int pX) const
 {
     //Take cached phi angle and add horizontal view angle offset; scale this result by available buffer pixels vs. available FOV
     return (staticDisplayTrafosX[pX] + viewOffsetPhi) * panoSphereSize.x / fovCentHor.x;
@@ -432,7 +436,7 @@ float Projector::displayTrafoX(int pX) const
  * \param pX Horizontal display position.
  * \return Corresponding vertical panorama sphere buffer position.
  */
-float Projector::displayTrafoY(int pY, int pX) const
+float Projector::displayTrafoY(const int pY, const int pX) const
 {
     //Take cached theta angle and add vertical view angle offset; scale this result by available buffer pixels vs.
     //available FOV and add an offset to vertically align center of projection with zero theta angle (sphere origin)
@@ -559,7 +563,7 @@ void Projector::fitViewOffset()
  *
  * \param pForceRemapSphere Force resizing and re-mapping of the panorama sphere.
  */
-void Projector::updateDisplayFOV(bool pForceRemapSphere)
+void Projector::updateDisplayFOV(const bool pForceRemapSphere)
 {
     float aspect = static_cast<float>(displaySize.x) / displaySize.y;
 
@@ -702,7 +706,7 @@ void Projector::mapPicToPanoSphere()
 
     //Choose y-tranformation according to projection type
     auto sphereTrafoY = [equirectToSphereTrafoY, cylindToSphereTrafoY,
-                         cylindrical = (projectionType == SceneMetaData::PanoramaProjection::_CENTRAL_CYLINDRICAL)](float pY) -> float
+                         cylindrical = (projectionType == SceneMetaData::PanoramaProjection::CentralCylindrical)](float pY) -> float
     {
         if (cylindrical)
             return cylindToSphereTrafoY(pY);
@@ -787,9 +791,9 @@ void Projector::mapPicToPanoSphere()
  * \param pBRx Horizontal coordinate of source image rectangle's bottom right corner.
  * \param pBRy Vertical coordinate of source image rectangle's bottom right corner.
  */
-void Projector::interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                                 std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
-                                 float pTLx, float pTLy, float pBRx, float pBRy)
+void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
+                                 const std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
+                                 const float pTLx, const float pTLy, const float pBRx, const float pBRy)
 {
     //Coordinates of topmost and leftmost source pixels that are at least partially covered by the transformed rectangle
     int tLxi = static_cast<int>(pTLx);

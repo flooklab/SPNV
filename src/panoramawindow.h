@@ -20,17 +20,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
-#ifndef PANORAMAWINDOW_H
-#define PANORAMAWINDOW_H
+#ifndef SPNV_PANORAMAWINDOW_H
+#define SPNV_PANORAMAWINDOW_H
 
-#include "version.h"
 #include "projector.h"
+#include "scenemetadata.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Texture.hpp>
 
 #include <memory>
 #include <string>
-#include <iostream>
 
 /*!
  * \brief Display panorama scenes on screen from variable perspectives.
@@ -78,4 +79,4 @@ private:
     bool mouseDragLockThetaAngle;           //Lock the vertical view angle during mouse drag
 };
 
-#endif // PANORAMAWINDOW_H
+#endif // SPNV_PANORAMAWINDOW_H

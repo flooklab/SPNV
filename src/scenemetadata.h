@@ -20,17 +20,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
-#ifndef SCENEMETADATA_H
-#define SCENEMETADATA_H
+#ifndef SPNV_SCENEMETADATA_H
+#define SPNV_SCENEMETADATA_H
 
 #include <SFML/System/Vector2.hpp>
 
+#include <cstdint>
 #include <string>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <cmath>
 
 /*!
  * \brief Handling of panorama scene-specific meta data for proper display on screen.
@@ -52,10 +48,10 @@ public:
      *
      * Type of projection used to map the reconstructed panorama sphere to the final output picture.
      */
-    enum class PanoramaProjection
+    enum class PanoramaProjection : std::uint8_t
     {
-        _CENTRAL_CYLINDRICAL,   ///< The "central cylindrical" projection.
-        _EQUIRECTANGULAR        ///< The "equirectangular" projection.
+        CentralCylindrical,     ///< The "central cylindrical" projection.
+        Equirectangular         ///< The "equirectangular" projection.
     };
 
 public:
@@ -84,4 +80,4 @@ private:
     sf::Vector2i cropPosBR;             //Position in uncropped picture corresponding to bottom right corner of cropped picture
 };
 
-#endif // SCENEMETADATA_H
+#endif // SPNV_SCENEMETADATA_H

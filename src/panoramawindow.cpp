@@ -464,7 +464,7 @@ void PanoramaWindow::updateWindowTitle()
     if (!projector)
         return;
 
-    window.setTitle(std::string(SPNV_PROGRAM_NAME) + " - \"" + fileName + "\" - " +
+    window.setTitle(std::string(Version::programName) + " - \"" + fileName + "\" - " +
                     std::to_string(std::lroundf(100*projector->getNormalizedZoom())) + "%" + (mouseDragLockThetaAngle ? " L" : ""));
 }
 

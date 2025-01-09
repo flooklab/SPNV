@@ -44,7 +44,7 @@
  */
 void printHelp()
 {
-    std::string helpString = "USAGE:\n " + std::string(SPNV_PROGRAM_NAME);
+    std::string helpString = "USAGE:\n " + std::string(Version::programName);
 
     helpString.append(" [--help]");
     helpString.append(" PANORAMA-PICTURE");

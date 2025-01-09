@@ -31,8 +31,6 @@ set(FILENAMES
     panoramawindow
     projector
     scenemetadata
-    )
-set(FILENAMES_hdOnl
     version
     )
 
@@ -41,11 +39,6 @@ foreach(filename ${FILENAMES})
 endforeach(filename)
 
 foreach(filename ${FILENAMES})
-    set(HEADERS "${HEADERS}" "${filename}.h")
-    configure_file("${PROJECT_SOURCE_DIR}/src/${filename}.h" "${PROJECT_BINARY_DIR}/include/${filename}.h" COPYONLY)
-endforeach(filename)
-
-foreach(filename ${FILENAMES_hdOnl})
     set(HEADERS "${HEADERS}" "${filename}.h")
     configure_file("${PROJECT_SOURCE_DIR}/src/${filename}.h" "${PROJECT_BINARY_DIR}/include/${filename}.h" COPYONLY)
 endforeach(filename)

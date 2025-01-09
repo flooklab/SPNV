@@ -464,7 +464,7 @@ void PanoramaWindow::updateWindowTitle()
     if (!projector)
         return;
 
-    window.setTitle(std::string(Version::programName) + " - \"" + fileName + "\" - " +
+    window.setTitle(std::string(Version::programName) + " " + Version::toString() + " - \"" + fileName + "\" - " +
                     std::to_string(std::lroundf(100*projector->getNormalizedZoom())) + "%" + (mouseDragLockThetaAngle ? " L" : ""));
 }
 

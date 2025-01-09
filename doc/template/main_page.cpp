@@ -7,7 +7,7 @@
 /// horizon lines. Pictures of two different panorama projection types, either
 /// the central cylindrical or the equirectangular projection, can be displayed.
 ///
-/// Copyright (C) 2022 M. Frohne
+/// Copyright (C) 2022, 2025 M. Frohne
 ///
 /// SPNV is free software: you can redistribute it and/or modify
 /// it under the terms of the GNU Affero General Public License as published

@@ -67,16 +67,16 @@ private:
     void renderPanoramaView();                  ///< Draw the current scene projection.
 
 private:
-    sf::RenderWindow window;                //Window used to display the panorama scene
+    sf::RenderWindow window;                ///< Window used to display the panorama scene.
     //
-    std::string fileName;                   //File name of current panorama picture
+    std::string fileName;                   ///< File name of current panorama picture.
     //
-    sf::Texture panoTexture;                //Texture used to draw the panorama scene
-    sf::Sprite panoSprite;                  //Sprite used to draw the panorama scene
+    sf::Texture panoTexture;                ///< Texture used to draw the panorama scene.
+    sf::Sprite panoSprite;                  ///< Sprite used to draw the panorama scene.
     //
-    std::unique_ptr<Projector> projector;   //Projector for picture loading, perspective transformation and display projection
+    std::unique_ptr<Projector> projector;   ///< Projector for picture loading, perspective transformation and display projection.
     //
-    bool mouseDragLockThetaAngle;           //Lock the vertical view angle during mouse drag
+    bool mouseDragLockThetaAngle;           ///< Lock the vertical view angle during mouse drag.
 };
 
 #endif // SPNV_PANORAMAWINDOW_H

@@ -120,55 +120,55 @@ private:
                                                                                 ///  rectangle in source image by area weighting.
 
 private:
-    sf::Image pic;                                          //Loaded panorama picture
+    sf::Image pic;                                          ///< Loaded panorama picture.
     //
-    const std::string fileName;                             //File name of the panorama picture
+    const std::string fileName;                             ///< File name of the panorama picture.
     //
-    const SceneMetaData::PanoramaProjection projectionType; //Panorama picture projection type
+    const SceneMetaData::PanoramaProjection projectionType; ///< Panorama picture projection type.
     //
-    const sf::Vector2i picUncroppedSize;            //Size of panorama picture if it was uncropped (size symmetric about horizon line)
-    const sf::Vector2f picUncroppedFOV;             //FOV of panorama picture if it was uncropped (FOV symmetric about horizon line)
+    const sf::Vector2i picUncroppedSize;            ///< Size of panorama picture if it was uncropped (size symmetric about horizon line).
+    const sf::Vector2f picUncroppedFOV;             ///< FOV of panorama picture if it was uncropped (FOV symmetric about horizon line).
     //
-    const sf::Vector2i picCropPosTL;                //Position in uncropped picture corresponding to top left corner of cropped picture
-    const sf::Vector2i picCropPosBR;                //Position in uncropped picture corresponding to bottom right corner of cropped picture
+    const sf::Vector2i picCropPosTL;                ///< Position in uncropped picture corresponding to top left corner of cropped picture.
+    const sf::Vector2i picCropPosBR;                ///< Position in uncropped picture corresponding to bottom right corner of cropped picture.
     //
-    const sf::Vector2i picSize;                     //Size of cropped picture derived from crop information
+    const sf::Vector2i picSize;                     ///< Size of cropped picture derived from crop information.
     //
-    const sf::Vector2f fovTL;                       //Horizontal/vertical FOV angle corresponding to top left corner of cropped picture
-    const sf::Vector2f fovBR;                       //Horizontal/vertical FOV angle corresponding to bottom right corner of cropped picture
+    const sf::Vector2f fovTL;                       ///< Horizontal/vertical FOV angle corresponding to top left corner of cropped picture.
+    const sf::Vector2f fovBR;                       ///< Horizontal/vertical FOV angle corresponding to bottom right corner of cropped picture.
     //
-    const sf::Vector2f fovCentHor;                  //Maximum symmetric FOV covered by cropped picture (possibly with one-sided margin)
-    const sf::Vector2f fovCentHorNoMargin;          //Maximum symmetric FOV fully covered by cropped picture without visible margins
-    const sf::Vector2f fovNonCentHorNoMargin;       //Maximum asymmetric FOV fully covered by cropped picture without visible margins
+    const sf::Vector2f fovCentHor;                  ///< Maximum symmetric FOV covered by cropped picture (possibly with one-sided margin).
+    const sf::Vector2f fovCentHorNoMargin;          ///< Maximum symmetric FOV fully covered by cropped picture without visible margins.
+    const sf::Vector2f fovNonCentHorNoMargin;       ///< Maximum asymmetric FOV fully covered by cropped picture without visible margins.
     //
-    float f;                                    //Focal length-like parameter used for camera-like rectilinear display projection
-    float zoom;                                 //Controls the visible amount of field of view
-    const float minZoomCentHor;                 //Minimal allowed zoom for display projections without margins (given centered horizon)
-    const float minZoomNonCentHor;              //Minimal allowed zoom for display projections without margins ("optimal" theta angle)
-    float viewOffsetPhi;                        //Phi rotation of camera/projection with respect to panorama sphere
-    float viewOffsetTheta;                      //Theta rotation of camera/projection with respect to panorama sphere
+    float f;                                    ///< Focal length-like parameter used for camera-like rectilinear display projection.
+    float zoom;                                 ///< Controls the visible amount of field of view.
+    const float minZoomCentHor;                 ///< Minimal allowed zoom for display projections without margins (given centered horizon).
+    const float minZoomNonCentHor;              ///< Minimal allowed zoom for display projections without margins ("optimal" theta angle).
+    float viewOffsetPhi;                        ///< Phi rotation of camera/projection with respect to panorama sphere.
+    float viewOffsetTheta;                      ///< Theta rotation of camera/projection with respect to panorama sphere.
     //
-    sf::Vector2i displaySize;                   //Target size for the rectilinear display projection
-    sf::Vector2f displayFOV;                    //Field of view covered by projection (depends on 'displaySize' aspect ratio and 'zoom')
-    std::vector<sf::Uint8> displayData;         //Data buffer for display projection
+    sf::Vector2i displaySize;                   ///< Target size for the rectilinear display projection.
+    sf::Vector2f displayFOV;                    ///< Field of view covered by projection (depends on 'displaySize' aspect ratio and 'zoom').
+    std::vector<sf::Uint8> displayData;         ///< Data buffer for display projection.
     //
-    std::vector<float> staticDisplayTrafosX;    //Cache for view angle-indep. part of horizontal trafo from display pos. to pano. sphere
-    std::vector<float> staticDisplayTrafosY;    //Cache for view angle-indep. part of vertical trafo from display pos. to pano. sphere
+    std::vector<float> staticDisplayTrafosX;    ///< Cache for view angle-indep. part of horizontal trafo from display pos. to pano. sphere.
+    std::vector<float> staticDisplayTrafosY;    ///< Cache for view angle-indep. part of vertical trafo from display pos. to pano. sphere.
     //
-    sf::Vector2i panoSphereSize;                //Image size of the panorama sphere
-    std::vector<sf::Uint8> panoSphereData;      //Data buffer for the panorama sphere
+    sf::Vector2i panoSphereSize;                ///< Image size of the panorama sphere.
+    std::vector<sf::Uint8> panoSphereData;      ///< Data buffer for the panorama sphere.
     //
-    const float panoSphereRemapHystMinOvers;    //Min. projection oversampling thresh. (increase pano. sphere resolution when zoom in more)
-    const float panoSphereRemapHystTargOvers;   //Target projection oversampling (try reach this value when adjusting pano. sphere resol.)
-    const float panoSphereRemapHystMaxOvers;    //Max. projection oversampling thresh. (decrease pano. sphere resolution when zoom out more)
-    float panoSphereRemapHystMaxF;      //Max. f beyond which oversampl. cannot be restored by pano. sphere re-calc. (limited picture res.)
+    const float panoSphereRemapHystMinOvers;    ///< Min. projection oversampling thresh. (increase pano. sphere resolution when zoom in more).
+    const float panoSphereRemapHystTargOvers;   ///< Target projection oversampling (try reach this value when adjusting pano. sphere resol.).
+    const float panoSphereRemapHystMaxOvers;    ///< Max. projection oversampling thresh. (decrease pano. sphere resolution when zoom out more).
+    float panoSphereRemapHystMaxF;      ///< Max. f beyond which oversampl. cannot be restored by pano. sphere re-calc. (limited picture res.).
     //
-    std::thread updateDisplayThread;                //Thread to update display projection to current perspective when triggered to do so
-    std::atomic_bool stopUpdateDisplayThread;       //Flag to stop the display projection updater thread
-    std::mutex updateDisplayMutex;                  //Mutex for synchronization between updateDisplayData() and updateDisplayDataLoop()
-    std::condition_variable updateDisplayCondVar;   //Cond. var. for synchronization between updateDisplayData() and updateDisplayDataLoop()
-    bool startUpdateDisplay;                        //Flag for triggering one update cycle of updateDisplayDataLoop()
-    bool updateDisplayFinished;                     //Flag for signalling to updateDisplayData() that the triggered update cycle has finished
+    std::thread updateDisplayThread;                ///< Thread to update display projection to current perspective when triggered to do so.
+    std::atomic_bool stopUpdateDisplayThread;       ///< Flag to stop the display projection updater thread.
+    std::mutex updateDisplayMutex;                  ///< Mutex for synchronization between updateDisplayData() and updateDisplayDataLoop().
+    std::condition_variable updateDisplayCondVar;   ///< Cond. var. for synchronization between updateDisplayData() and updateDisplayDataLoop().
+    bool startUpdateDisplay;                        ///< Flag for triggering one update cycle of updateDisplayDataLoop().
+    bool updateDisplayFinished;                 ///< Flag for signalling to updateDisplayData() that the triggered update cycle has finished.
 };
 
 #endif // SPNV_PROJECTOR_H

@@ -73,11 +73,11 @@ public:
     bool saveToPNVFile(const std::string& pFileName) const; ///< Write the meta data to a "PNV file".
 
 private:
-    PanoramaProjection projectionType;  //Panorama sphere to output picture projection type
-    sf::Vector2i uncroppedSize;         //Size of panorama picture if it was uncropped (size symmetric about horizon line)
-    sf::Vector2f uncroppedFOV;          //FOV of panorama picture if it was uncropped (FOV symmetric about horizon line)
-    sf::Vector2i cropPosTL;             //Position in uncropped picture corresponding to top left corner of cropped picture
-    sf::Vector2i cropPosBR;             //Position in uncropped picture corresponding to bottom right corner of cropped picture
+    PanoramaProjection projectionType;  ///< Panorama sphere to output picture projection type.
+    sf::Vector2i uncroppedSize;         ///< Size of panorama picture if it was uncropped (size symmetric about horizon line).
+    sf::Vector2f uncroppedFOV;          ///< FOV of panorama picture if it was uncropped (FOV symmetric about horizon line).
+    sf::Vector2i cropPosTL;             ///< Position in uncropped picture corresponding to top left corner of cropped picture.
+    sf::Vector2i cropPosBR;             ///< Position in uncropped picture corresponding to bottom right corner of cropped picture.
 };
 
 #endif // SPNV_SCENEMETADATA_H

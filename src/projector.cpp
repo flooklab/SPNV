@@ -736,9 +736,9 @@ void Projector::updateDisplayDataLoop()
             {
                 //Top left and bottom right corner coordinates of the projection pixel transformed to the panorama sphere
                 float tLx = displayTrafosX[x];
-                float tLy = displayTrafosY[(displaySize.x+1)*y + x];
                 float bRx = displayTrafosX[x+1];
-                float bRy = displayTrafosY[(displaySize.x+1)*(y+1) + x + 1];
+                float tLy = displayTrafosY[(displaySize.x+1)*y + x];            // cppcheck-suppress variableScope symbolName=tLy
+                float bRy = displayTrafosY[(displaySize.x+1)*(y+1) + x + 1];    // cppcheck-suppress variableScope symbolName=bRy
 
                 bool pixelOutOfRange = false;
 

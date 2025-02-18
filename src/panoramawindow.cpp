@@ -32,9 +32,11 @@
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/WindowStyle.hpp>
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 
 /*!
  * \brief Constructor.
@@ -129,6 +131,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
     //Helper variables for view angle manipulation via mouse drag
     sf::Vector2f dragInitialMouseAngle;
     sf::Vector2i dragCurrentMousePos;
+    sf::Vector2i dragLastMousePos;
     double dragInitialViewOffsetTheta = 0;
     double dragInitialViewOffsetPhi = 0;
     bool dragWaitForWrap = false;   //Skip mouse move events until current event's mouse position matches set mouse position again
@@ -143,6 +146,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
         //be able to calculate and set a relative perspective change from a changing mouse position
 
         dragCurrentMousePos = sf::Mouse::getPosition(window);
+        dragLastMousePos = dragCurrentMousePos;
 
         dragInitialMouseAngle = projector->getViewAngle(dragCurrentMousePos);
 
@@ -358,6 +362,13 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
             }
         }
 
+        //Short sleep and continue if nothing to do in order to reduce CPU load
+        if (!windowResizing && !(mouseDragging && (dragCurrentMousePos != dragLastMousePos)))
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{2});
+            continue;
+        }
+
         //If at least one window resize event was collected in the event loop above, resize the panorama scene now
         if (windowResizing)
         {
@@ -372,7 +383,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
 
         //If view angle manipulation via mouse drag is active, change scene perspective according to initial (at mouse
         //drag activation) and current mouse position so that mouse pointer stays aligned with same spot in the scene
-        if (mouseDragging)
+        if (mouseDragging && (dragCurrentMousePos != dragLastMousePos))
         {
             //Calculate relative movement of mouse position between start of mouse drag and now in terms of panorama sphere angles
 
@@ -414,6 +425,8 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                 //Skip pending mouse move events until event triggered by sf::Mouse::setPosition is reached
                 dragWaitForWrap = true;
             }
+
+            dragLastMousePos = dragCurrentMousePos;
         }
     }
 

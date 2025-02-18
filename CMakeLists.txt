@@ -186,7 +186,7 @@ if(SPNV_BUILD_DOCUMENTATION)
     set(TEMPLATE_DIR "${PROJECT_SOURCE_DIR}/doc/template")
     set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
     configure_file("${DOXYFILE_IN}" "${DOXYFILE}" @ONLY)
-    add_custom_target(Documentation ALL ${DOXYGEN_EXECUTABLE} "${DOXYFILE}" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}" VERBATIM)
+    add_custom_target(Documentation ALL Doxygen::doxygen "${DOXYFILE}" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}" VERBATIM)
 endif()
 
 #

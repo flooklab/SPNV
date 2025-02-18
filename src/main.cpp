@@ -48,7 +48,8 @@ void printHelp()
 
     helpString.append("USAGE:\n " + std::string(Version::programName));
 
-    helpString.append(" [--help]");
+    helpString.append(" [-h | --help]");
+    helpString.append(" [-f | --fullscreen]");
     helpString.append(" PANORAMA-PICTURE");
     helpString.append(" [--pto=HUGIN-FILE | -p HUGIN-FILE]");
 
@@ -59,6 +60,7 @@ void printHelp()
     helpString.append("\nOPTIONS:\n");
 
     helpString.append(" -h, --help\n        Print a description of the command line options and exit.\n\n");
+    helpString.append(" -f, --fullscreen\n        Start in fullscreen mode.\n\n");
     helpString.append(" -p, --pto=HUGIN-FILE\n        Extract information from Hugin project needed to properly display "
                       "PANORAMA-PICTURE. Save this information to a \"PNV\" file (same basename as PANORAMA-PICTURE) and exit.\n");
 
@@ -95,6 +97,9 @@ int main(int argc, const char* argv[])
     //File names of panorama picture and (optionally) the corresponding Hugin project file
     std::string picFileName, ptoFileName;
 
+    //Immediately start in fullscreen mode when displaying the panorama scene
+    bool startWithFullscreen = false;
+
     //Parse command line arguments
     if (args.size() == 2)
     {
@@ -105,6 +110,11 @@ int main(int argc, const char* argv[])
         }
         else
             picFileName = args[1];
+    }
+    else if (args.size() == 3 && (args[1] == "-f" || args[1] == "--fullscreen"))
+    {
+        picFileName = args[2];
+        startWithFullscreen = true;
     }
     else if (args.size() == 3)
     {
@@ -189,7 +199,7 @@ int main(int argc, const char* argv[])
 
     PanoramaWindow panoWindow;
 
-    if (!panoWindow.run(picFileName, metaData))
+    if (!panoWindow.run(picFileName, metaData, startWithFullscreen))
     {
         std::cerr<<"ERROR: Could not properly display the panorama scene!"<<std::endl;
         return EXIT_FAILURE;

@@ -88,9 +88,10 @@ PanoramaWindow::PanoramaWindow() :
  *
  * \param pFileName Panorama picture to load.
  * \param pSceneMetaData Meta data for panorama scene from \p pFileName.
+ * \param pFullscreenMode Immediately start in fullscreen mode.
  * \return If could successfully load \p pFileName (and picture dimensions match information from \p pSceneMetaData).
  */
-bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSceneMetaData)
+bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSceneMetaData, const bool pFullscreenMode)
 {
     //Create a new projector for the current panorama scene
     try
@@ -107,7 +108,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
 
     //Setup a window
 
-    bool fullscreenMode = false;
+    bool fullscreenMode = pFullscreenMode;
 
     createWindow(fullscreenMode);
 

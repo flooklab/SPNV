@@ -52,7 +52,8 @@ class PanoramaWindow
 public:
     PanoramaWindow();                           ///< Constructor.
     //
-    bool run(const std::string& pFileName, const SceneMetaData& pSceneMetaData);    ///< Display a picture as panorama scene in a window.
+    bool run(const std::string& pFileName, const SceneMetaData& pSceneMetaData, bool pFullscreenMode = false);
+                                                ///< Display a picture as panorama scene in a window.
 
 private:
     void createWindow(bool pFullscreenMode);    ///< Create a new window or recreate the old window.

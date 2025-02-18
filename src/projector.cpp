@@ -762,12 +762,12 @@ void Projector::updateDisplayDataLoop()
                             pixelOutOfRange = true;
                         }
                     }
-                    else if (bRx > panoSphereSize.x)
+                    else if (static_cast<int>(bRx) >= panoSphereSize.x)
                     {
-                        bRx = panoSphereSize.x;
-                        if (tLx > panoSphereSize.x)
+                        bRx = std::nextafter(static_cast<float>(panoSphereSize.x), 0.f);
+                        if (tLx > bRx)
                         {
-                            tLx = panoSphereSize.x;
+                            tLx = bRx;
                             pixelOutOfRange = true;
                         }
                     }
@@ -993,6 +993,10 @@ void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const std:
                 wrap = pSourceImageSize.x;
             else if (tLxi+ix >= pSourceImageSize.x)
                 wrap = -pSourceImageSize.x;
+
+            //Must never wrap around for horizontally finite panoramas (i.e. ignore those pixels)
+            if (!fovIs360Degrees && wrap != 0)
+                continue;
 
             //Calculate width of intersection of pixel and rectangle
             float xWeight = 1;

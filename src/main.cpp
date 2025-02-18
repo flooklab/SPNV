@@ -118,7 +118,10 @@ std::vector<std::pair<std::string, SceneMetaData>> getAllPanoramaPictures(const 
         const std::filesystem::path refPicFilePath = pRefPicFileName;
 
         const std::string picFileExt = refPicFilePath.extension();
-        const std::filesystem::path picFilesDirPath = refPicFilePath.parent_path();
+        std::filesystem::path picFilesDirPath = refPicFilePath.parent_path();
+
+        if (picFilesDirPath.empty())
+            picFilesDirPath = ".";
 
         std::set<std::filesystem::path> picPaths;
         std::set<std::filesystem::path> pnvPaths;
@@ -280,7 +283,11 @@ int main(int argc, const char* argv[])
     std::vector<std::pair<std::string, SceneMetaData>> dirPicFilesWithMetaData = getAllPanoramaPictures(picFileName);
 
     auto currentPic = std::find_if(dirPicFilesWithMetaData.begin(), dirPicFilesWithMetaData.end(),
-                                   [picFileName](const std::pair<std::string, SceneMetaData>& pPair) { return pPair.first == picFileName; });
+                                   [picFileName](const std::pair<std::string, SceneMetaData>& pPair)
+                                    {
+                                        try { return std::filesystem::canonical(pPair.first) == std::filesystem::canonical(picFileName); }
+                                        catch (const std::exception&) { return false; }
+                                    });
 
     if (currentPic == dirPicFilesWithMetaData.end())
     {

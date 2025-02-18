@@ -739,19 +739,55 @@ void Projector::updateDisplayDataLoop()
                 float bRx = displayTrafosX[x+1];
                 float bRy = displayTrafosY[(displaySize.x+1)*(y+1) + x + 1];
 
+                bool pixelOutOfRange = false;
+
                 //In case of a 360 degree panorama the transformations might output values that exceed FOV of the scene;
                 //at this point only fix lower boundary to avoid negative individual values but also avoid wrong negative difference (bRx-tLx)
-                if (tLx < 0)
-                    tLx += panoSphereSize.x;
-                if (bRx - tLx < 0)
-                    bRx += panoSphereSize.x;
+                if (fovIs360Degrees)
+                {
+                    if (tLx < 0)
+                        tLx += panoSphereSize.x;
+                    if (bRx - tLx < 0)
+                        bRx += panoSphereSize.x;
+                }
+                else    //For horizontally finite (i.e. below 360 degrees) panoramas there might also be values that exceed FOV of the scene
+                {       //if the window/display aspect ratio is very wide; limit boundaries then and detect pixels fully out of bounds
+                    if (tLx < 0)
+                    {
+                        tLx = 0;
+                        if (bRx < 0)
+                        {
+                            bRx = 0;
+                            pixelOutOfRange = true;
+                        }
+                    }
+                    else if (bRx > panoSphereSize.x)
+                    {
+                        bRx = panoSphereSize.x;
+                        if (tLx > panoSphereSize.x)
+                        {
+                            tLx = panoSphereSize.x;
+                            pixelOutOfRange = true;
+                        }
+                    }
+                }
 
-                //Interpolate current display pixel color from panorama sphere pixels covered by the transformed pixel rectangle
-                interpolatePixel(panoSphereSize, sourcePixels,
-                                 displayData[4*(displaySize.x*y + x)],
-                                 displayData[4*(displaySize.x*y + x) + 1],
-                                 displayData[4*(displaySize.x*y + x) + 2],
-                                 tLx, tLy, bRx, bRy);
+                if (!pixelOutOfRange)
+                {
+                    //Interpolate current display pixel color from panorama sphere pixels covered by the transformed pixel rectangle
+                    interpolatePixel(panoSphereSize, sourcePixels,
+                                     displayData[4*(displaySize.x*y + x)],
+                                     displayData[4*(displaySize.x*y + x) + 1],
+                                     displayData[4*(displaySize.x*y + x) + 2],
+                                     tLx, tLy, bRx, bRy);
+                }
+                else
+                {
+                    //Make fully out of bounds pixels black for a horizontally finite panorama (as it cannot be wrapped around 360 degrees)
+                    displayData[4*(displaySize.x*y + x)] = 0;
+                    displayData[4*(displaySize.x*y + x) + 1] = 0;
+                    displayData[4*(displaySize.x*y + x) + 2] = 0;
+                }
             }
         }
 

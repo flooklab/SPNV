@@ -141,6 +141,8 @@ private:
     const sf::Vector2f fovCentHorNoMargin;          ///< Maximum symmetric FOV fully covered by cropped picture without visible margins.
     const sf::Vector2f fovNonCentHorNoMargin;       ///< Maximum asymmetric FOV fully covered by cropped picture without visible margins.
     //
+    const bool fovIs360Degrees;                     ///< Cropped picture is a 360 degree panorama according to the horizontal FOV angle.
+    //
     float f;                                    ///< Focal length-like parameter used for camera-like rectilinear display projection.
     float zoom;                                 ///< Controls the visible amount of field of view.
     const float minZoomCentHor;                 ///< Minimal allowed zoom for display projections without margins (given centered horizon).

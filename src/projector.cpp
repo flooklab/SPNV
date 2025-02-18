@@ -32,6 +32,19 @@
 #endif
 #endif
 
+namespace
+{
+
+/*
+ * Performs a sane, rounded comparison of the two floats 'pLeft' and 'pRight' within 4 decimal places.
+ */
+bool roundedCompareSmaller(const float pLeft, const float pRight)
+{
+    return (static_cast<int>(pLeft * 10000) + 1) < static_cast<int>(pRight * 10000);
+}
+
+} // namespace
+
 /*!
  * \brief Constructor.
  *
@@ -71,6 +84,8 @@ Projector::Projector(const std::string& pFileName, const SceneMetaData& pSceneMe
     fovCentHor({fovBR.x - fovTL.x, 2*std::max(fovTL.y, -fovBR.y)}),
     fovCentHorNoMargin({fovBR.x - fovTL.x, 2*std::min(fovTL.y, -fovBR.y)}),
     fovNonCentHorNoMargin({fovBR.x - fovTL.x, fovTL.y - fovBR.y}),
+    //
+    fovIs360Degrees(::roundedCompareSmaller(fovCentHor.x, 2*M_PI) == false),
     //
     f(0),
     zoom(1),
@@ -543,15 +558,9 @@ float Projector::calcLowestDisplayTrafoOversampling() const
  */
 void Projector::fitViewOffset()
 {
-    //Lambda for sane, rounded comparison of two floats within 4 decimal places
-    auto roundedCompareSmaller = [](float pLeft, float pRight) -> bool
-    {
-        return (static_cast<int>(pLeft * 10000) + 1) < static_cast<int>(pRight * 10000);
-    };
-
     //Limit horizontal view angle offset such that no point in display projection is beyond available FOV;
     //in case of a 360 degree panorama do not limit horizontal view angle offset, but keep it within [0, 2*PI)
-    if (roundedCompareSmaller(fovCentHor.x, 2*M_PI))
+    if (!fovIs360Degrees)
     {
         if (fovCentHor.x < displayFOV.x)
             viewOffsetPhi = fovCentHor.x / 2.;  //Horizontally center the scene if display FOV is wider than scene FOV

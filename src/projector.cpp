@@ -739,9 +739,9 @@ void Projector::updateDisplayDataLoop()
 
                 //Interpolate current display pixel color from panorama sphere pixels covered by the transformed pixel rectangle
                 interpolatePixel(panoSphereSize, sourcePixels,
-                                 {std::ref(displayData[4*(displaySize.x*y + x)]),
-                                  std::ref(displayData[4*(displaySize.x*y + x) + 1]),
-                                  std::ref(displayData[4*(displaySize.x*y + x) + 2])},
+                                 displayData[4*(displaySize.x*y + x)],
+                                 displayData[4*(displaySize.x*y + x) + 1],
+                                 displayData[4*(displaySize.x*y + x) + 2],
                                  tLx, tLy, bRx, bRy);
             }
         }
@@ -867,9 +867,9 @@ void Projector::mapPicToPanoSphere()
 
             //Interpolate current panorama sphere pixel color from panorama picture pixels covered by the transformed pixel rectangle
             interpolatePixel(picSize, sourcePixels,
-                             {std::ref(panoSphereData[4*(panoSphereSize.x*y + x)]),
-                              std::ref(panoSphereData[4*(panoSphereSize.x*y + x) + 1]),
-                              std::ref(panoSphereData[4*(panoSphereSize.x*y + x) + 2])},
+                             panoSphereData[4*(panoSphereSize.x*y + x)],
+                             panoSphereData[4*(panoSphereSize.x*y + x) + 1],
+                             panoSphereData[4*(panoSphereSize.x*y + x) + 2],
                              tLx, tLy, bRx, bRy);
         }
     }
@@ -881,24 +881,27 @@ void Projector::mapPicToPanoSphere()
  * \brief Interpolate target pixel color from rectangle in source image by area weighting.
  *
  * The color values of pixels from \p pSourcePixels within the rectangle {{\p pTLx, \p pTLy}, {\p pBRx, \p pBRy}}
- * are averaged and the resulting color is applied to \p pTargetPixel. The color averaging is area-weighted.
- * It uses the intersection of the source pixel and rectangle areas as weights.
+ * are averaged and the resulting color is applied to \p pTargetPixelR, \p pTargetPixelG and \p pTargetPixelB.
+ * The color averaging is area-weighted. It uses the intersection of the source pixel and rectangle areas as weights.
  *
  * The format of the source image data \p pSourcePixels must be equivalent to the format used for the data
  * returned by getDisplayData() (see there) with the source image size being \p pSourceImageSize here.
  *
- * \p pTargetPixel are references to the individual {r, g, b} color values of the target pixel.
+ * \p pTargetPixelR / \p pTargetPixelG / \p pTargetPixelB are references
+ * to the individual red/green/blue color values of the target pixel.
  *
  * \param pSourceImageSize Size of the source image.
  * \param pSourcePixels Source image data as flat array.
- * \param pTargetPixel Target image pixel color as {r, g, b}.
+ * \param pTargetPixelR Target image pixel red color value.
+ * \param pTargetPixelG Target image pixel green color value.
+ * \param pTargetPixelB Target image pixel blue color value.
  * \param pTLx Horizontal coordinate of source image rectangle's top left corner.
  * \param pTLy Vertical coordinate of source image rectangle's top left corner.
  * \param pBRx Horizontal coordinate of source image rectangle's bottom right corner.
  * \param pBRy Vertical coordinate of source image rectangle's bottom right corner.
  */
 void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                                 const std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
+                                 sf::Uint8& pTargetPixelR, sf::Uint8& pTargetPixelG, sf::Uint8& pTargetPixelB,
                                  const float pTLx, const float pTLy, const float pBRx, const float pBRy)
 {
     //Coordinates of topmost and leftmost source pixels that are at least partially covered by the transformed rectangle
@@ -965,7 +968,7 @@ void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const sf::
 
     //Set target pixel color to area-weighted color of the transformed source rectangle
 
-    pTargetPixel[0].get() = r / totalWeight;
-    pTargetPixel[1].get() = g / totalWeight;
-    pTargetPixel[2].get() = b / totalWeight;
+    pTargetPixelR = r / totalWeight;
+    pTargetPixelG = g / totalWeight;
+    pTargetPixelB = b / totalWeight;
 }

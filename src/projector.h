@@ -29,10 +29,8 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
 
-#include <array>
 #include <atomic>
 #include <condition_variable>
-#include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -117,7 +115,7 @@ private:
     void mapPicToPanoSphere();                              ///< Project the loaded picture onto the panorama sphere.
     //
     void interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                          std::array<std::reference_wrapper<sf::Uint8>, 3> pTargetPixel,
+                          sf::Uint8& pTargetPixelR, sf::Uint8& pTargetPixelG, sf::Uint8& pTargetPixelB,
                           float pTLx, float pTLy, float pBRx, float pBRy);      ///< \brief Interpolate target pixel color from
                                                                                 ///  rectangle in source image by area weighting.
 

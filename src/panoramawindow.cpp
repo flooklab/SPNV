@@ -85,15 +85,24 @@ PanoramaWindow::PanoramaWindow() :
  *
  * The window can be closed again via your preferred operating system functions or by pressing CTRL+'W'.
  *
+ * If you press CTRL+'S' / CTRL+'A' the window closes and requests from the caller (via \p pRequestNext / \p pRequestPrev)
+ * that it calls this function again to then display a "next" / "previous" panorama picture (e.g. from the same directory).
+ *
  * Fullscreen mode of the window can be toggled by pressing 'F' or F11.
  *
  * \param pFileName Panorama picture to load.
  * \param pSceneMetaData Meta data for panorama scene from \p pFileName.
+ * \param pRequestPrev May be set to true when this function returns to request from the caller that a "previous" panorama picture be shown.
+ * \param pRequestNext May be set to true when this function returns to request from the caller that a "next" panorama picture be shown.
  * \param pFullscreenMode Immediately start in fullscreen mode.
  * \return If could successfully load \p pFileName (and picture dimensions match information from \p pSceneMetaData).
  */
-bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSceneMetaData, const bool pFullscreenMode)
+bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSceneMetaData, bool& pRequestPrev, bool& pRequestNext,
+                         const bool pFullscreenMode)
 {
+    pRequestPrev = false;
+    pRequestNext = false;
+
     //Create a new projector for the current panorama scene
     try
     {
@@ -352,6 +361,24 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                         {
                             if (event.key.control)
                                 window.close();
+                            break;
+                        }
+                        case sf::Keyboard::Key::A:
+                        {
+                            if (event.key.control)
+                            {
+                                pRequestPrev = true;
+                                window.close();
+                            }
+                            break;
+                        }
+                        case sf::Keyboard::Key::S:
+                        {
+                            if (event.key.control)
+                            {
+                                pRequestNext = true;
+                                window.close();
+                            }
                             break;
                         }
                         default:

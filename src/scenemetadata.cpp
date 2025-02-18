@@ -20,6 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
+#include "constants.h"
 #include "scenemetadata.h"
 
 #include <cmath>
@@ -214,7 +215,7 @@ bool SceneMetaData::loadFromPTOFile(const std::string& pFileName)
         proj = std::atoi(substrProj.c_str());
         h = std::atoi(substrH.c_str());
         w = std::atoi(substrW.c_str());
-        hfov = std::atoi(substrHFOV.c_str()) * static_cast<float>(M_PI)/180.f;
+        hfov = std::atoi(substrHFOV.c_str()) * Constants::pi / 180.f;
         cropL = std::atoi(substrCropL.c_str());
         cropR = std::atoi(substrCropR.c_str());
         cropT = std::atoi(substrCropT.c_str());

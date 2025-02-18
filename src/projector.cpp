@@ -20,6 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 */
 
+#include "constants.h"
 #include "projector.h"
 
 #include <algorithm>
@@ -85,7 +86,7 @@ Projector::Projector(const std::string& pFileName, const SceneMetaData& pSceneMe
     fovCentHorNoMargin({fovBR.x - fovTL.x, 2*std::min(fovTL.y, -fovBR.y)}),
     fovNonCentHorNoMargin({fovBR.x - fovTL.x, fovTL.y - fovBR.y}),
     //
-    fovIs360Degrees(::roundedCompareSmaller(fovCentHor.x, 2*M_PI) == false),
+    fovIs360Degrees(::roundedCompareSmaller(fovCentHor.x, 2*Constants::pi) == false),
     //
     f(0),
     zoom(1),
@@ -572,9 +573,9 @@ void Projector::fitViewOffset()
     else
     {
         if (viewOffsetPhi < 0)
-            viewOffsetPhi += 2*M_PI;
-        else if (viewOffsetPhi >= 2*M_PI)
-            viewOffsetPhi -= 2*M_PI;
+            viewOffsetPhi += 2*Constants::pi;
+        else if (viewOffsetPhi >= 2*Constants::pi)
+            viewOffsetPhi -= 2*Constants::pi;
     }
 
     //Also limit vertical view angle offset such that no point in display projection is beyond available FOV

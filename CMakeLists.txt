@@ -133,6 +133,7 @@ set(SOURCE_FILE_NAMES
     version.cpp
 )
 set(HEADER_FILE_NAMES
+    constants.h
     panoramawindow.h
     projector.h
     scenemetadata.h

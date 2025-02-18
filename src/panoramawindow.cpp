@@ -22,6 +22,7 @@
 
 #include "panoramawindow.h"
 
+#include "constants.h"
 #include "version.h"
 
 #include <SFML/Graphics/View.hpp>
@@ -240,7 +241,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                         {
                             //Turn perspective to the left (fixed step size)
                             projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi() - 5.*M_PI/180.,
+                                                  projector->getOffsetPhi() - 5.*Constants::pi/180.,
                                                   projector->getOffsetTheta());
                             renderPanoramaView();
                             break;
@@ -249,7 +250,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                         {
                             //Turn perspective to the right (fixed step size)
                             projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi() + 5.*M_PI/180.,
+                                                  projector->getOffsetPhi() + 5.*Constants::pi/180.,
                                                   projector->getOffsetTheta());
                             renderPanoramaView();
                             break;
@@ -259,7 +260,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                             //Turn perspective upwards (fixed step size)
                             projector->updateView(projector->getZoom(),
                                                   projector->getOffsetPhi(),
-                                                  projector->getOffsetTheta() - 5*M_PI/180.);
+                                                  projector->getOffsetTheta() - 5*Constants::pi/180.);
                             renderPanoramaView();
                             break;
                         }
@@ -268,7 +269,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                             //Turn perspective downwards (fixed step size)
                             projector->updateView(projector->getZoom(),
                                                   projector->getOffsetPhi(),
-                                                  projector->getOffsetTheta() + 5*M_PI/180.);
+                                                  projector->getOffsetTheta() + 5*Constants::pi/180.);
                             renderPanoramaView();
                             break;
                         }
@@ -307,7 +308,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                         case sf::Keyboard::Key::H:
                         {
                             //Adjust zoom so that horizontal field of view is 65 degrees; update window title for changed zoom level
-                            projector->updateView(projector->getRequiredZoomFromHFOV(65.f * static_cast<float>(M_PI) / 180.f),
+                            projector->updateView(projector->getRequiredZoomFromHFOV(65.f * Constants::pi / 180.f),
                                                   projector->getOffsetPhi(), projector->getOffsetTheta());
                             updateWindowTitle();
                             renderPanoramaView();
@@ -316,7 +317,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                         case sf::Keyboard::Key::V:
                         {
                             //Adjust zoom so that vertical field of view is 45 degrees; update window title for changed zoom level
-                            projector->updateView(projector->getRequiredZoomFromVFOV(45.f * static_cast<float>(M_PI) / 180.f),
+                            projector->updateView(projector->getRequiredZoomFromVFOV(45.f * Constants::pi / 180.f),
                                                   projector->getOffsetPhi(), projector->getOffsetTheta());
                             updateWindowTitle();
                             renderPanoramaView();

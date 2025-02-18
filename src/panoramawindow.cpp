@@ -208,27 +208,27 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                 //pending events have been processed (this ignores/groups consecutive resize events of a single resize operation)
                 windowResizing = true;
             }
-            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseWheelScrolled>())
+            else if (const auto *const mouseScrolledEvent = event->getIf<sf::Event::MouseWheelScrolled>())
             {
-                if (mouseEvent->delta > 0)
+                if (mouseScrolledEvent->delta > 0)
                     zoomIn();
-                else if (mouseEvent->delta < 0)
+                else if (mouseScrolledEvent->delta < 0)
                     zoomOut();
             }
-            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseButtonPressed>())
+            else if (const auto *const mousePressedEvent = event->getIf<sf::Event::MouseButtonPressed>())
             {
                 //Enable view angle manipulation via mouse movement, which will be handled below the event loop each time when all
                 //pending events have been processed (this groups/ignores small consecutive move events from continuous mouse movement)
-                if (mouseEvent->button == sf::Mouse::Button::Left)
+                if (mousePressedEvent->button == sf::Mouse::Button::Left)
                     enableMouseDragging();
             }
-            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseButtonReleased>())
+            else if (const auto *const mouseReleasedEvent = event->getIf<sf::Event::MouseButtonReleased>())
             {
                 //Disable view angle manipulation via mouse movement again
-                if (mouseEvent->button == sf::Mouse::Button::Left)
+                if (mouseReleasedEvent->button == sf::Mouse::Button::Left)
                     mouseDragging = false;
             }
-            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseMoved>())
+            else if (const auto *const mouseMovedEvent = event->getIf<sf::Event::MouseMoved>())
             {
                 //Capture current mouse position if view angle manipulation via mouse movement is enabled;
                 //actual movement logic happens below the event loop
@@ -238,19 +238,19 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                     //pending mouse move events until current event's mouse position matches set mouse position again
                     if (dragWaitForWrap)
                     {
-                        if (dragCurrentMousePos.x == mouseEvent->position.x && dragCurrentMousePos.y == mouseEvent->position.y)
+                        if (dragCurrentMousePos.x == mouseMovedEvent->position.x && dragCurrentMousePos.y == mouseMovedEvent->position.y)
                             dragWaitForWrap = false;
                     }
                     else
                     {
-                        dragCurrentMousePos.x = mouseEvent->position.x;
-                        dragCurrentMousePos.y = mouseEvent->position.y;
+                        dragCurrentMousePos.x = mouseMovedEvent->position.x;
+                        dragCurrentMousePos.y = mouseMovedEvent->position.y;
                     }
                 }
             }
-            else if (const auto *const keyEvent = event->getIf<sf::Event::KeyPressed>())
+            else if (const auto *const keyPressedEvent = event->getIf<sf::Event::KeyPressed>())
             {
-                switch (keyEvent->code)
+                switch (keyPressedEvent->code)
                 {
                     case sf::Keyboard::Key::Left:
                     {
@@ -311,7 +311,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                     {
                         //Reset to minimum possible zoom level (!CTRL) or center horizon and reset to minimum possible zoom level
                         //that can just preserve the centered horizon (CTRL); update window title for resulting zoom level
-                        if (keyEvent->control)
+                        if (keyPressedEvent->control)
                             projector->updateView(-1, projector->getOffsetPhi(), 0);
                         else
                             projector->updateView(0, projector->getOffsetPhi(), projector->getOffsetTheta());
@@ -365,13 +365,13 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                     }
                     case sf::Keyboard::Key::W:
                     {
-                        if (keyEvent->control)
+                        if (keyPressedEvent->control)
                             window.close();
                         break;
                     }
                     case sf::Keyboard::Key::A:
                     {
-                        if (keyEvent->control)
+                        if (keyPressedEvent->control)
                         {
                             pRequestPrev = true;
                             window.close();
@@ -380,7 +380,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
                     }
                     case sf::Keyboard::Key::S:
                     {
-                        if (keyEvent->control)
+                        if (keyPressedEvent->control)
                         {
                             pRequestNext = true;
                             window.close();

@@ -26,6 +26,12 @@
 #include <cmath>
 #include <stdexcept>
 
+#ifndef DISABLE_OMP
+#ifdef _OPENMP
+#define USE_OMP
+#endif
+#endif
+
 /*!
  * \brief Constructor.
  *
@@ -86,13 +92,34 @@ Projector::Projector(const std::string& pFileName, const SceneMetaData& pSceneMe
     panoSphereRemapHystMinOvers(1.0),
     panoSphereRemapHystTargOvers(1.5),
     panoSphereRemapHystMaxOvers(2.0),
-    panoSphereRemapHystMaxF(0)
+    panoSphereRemapHystMaxF(0),
+    //
+    updateDisplayThread(),
+    stopUpdateDisplayThread(false),
+    updateDisplayMutex(),
+    updateDisplayCondVar(),
+    startUpdateDisplay(false),
+    updateDisplayFinished(false)
 {
     if (!pic.loadFromFile(fileName))
         throw std::runtime_error("Could not load the picture \"" + fileName + "\"!");
 
     if (pic.getSize().x != static_cast<unsigned int>(picSize.x) || pic.getSize().y != static_cast<unsigned int>(picSize.y))
         throw std::runtime_error("Loaded picture size does not match specified cropped picture size!");
+}
+
+/*!
+ * \brief Destructor.
+ *
+ * Stops the updateDisplayDataLoop() thread that was (likely) started by updateDisplayData().
+ */
+Projector::~Projector()
+{
+    stopUpdateDisplayThread.store(true);
+    updateDisplayCondVar.notify_one();
+
+    if (updateDisplayThread.joinable())
+        updateDisplayThread.join();
 }
 
 //Public
@@ -609,53 +636,124 @@ void Projector::updateDisplayFOV(const bool pForceRemapSphere)
 /*!
  * \brief Project current panorama sphere perspective to display projection buffer.
  *
- * Fills the display projection buffer with a rectilinear projection of the panorama sphere
- * at the current perspective defined by zoom level and view angle offset. Pixel colors are
- * interpolated between the two buffers of arbitrary resolution via a simple area weighting
- * (see also interpolatePixel()).
+ * Starts updateDisplayDataLoop() as thread if not already running and triggers its next iteration to fill the
+ * display projection buffer with a rectilinear projection of the panorama sphere at the current perspective.
+ * See updateDisplayDataLoop().
+ *
+ * Note: Waits for the update iteration to finish and only then returns.
  */
 void Projector::updateDisplayData()
 {
-    //Flat array of panorama sphere image data
-    const sf::Uint8* sourcePixels = panoSphereData.data();
+    if (!updateDisplayThread.joinable())
+        updateDisplayThread = std::thread(&Projector::updateDisplayDataLoop, this);
 
-    //Cache final projection transformation values for current perspective as they are reused for every projection pixel below
-
-    std::vector<float> displayTrafosX(displaySize.x+1, 0);
-    std::vector<float> displayTrafosY((displaySize.x+1)*(displaySize.y+1), 0);
-
-    for (int x = 0; x <= displaySize.x; ++x)
-        displayTrafosX[x] = displayTrafoX(x);
-
-    for (int y = 0; y <= displaySize.y; ++y)
-        for (int x = 0; x <= displaySize.x; ++x)
-            displayTrafosY[(displaySize.x+1)*y + x] = displayTrafoY(y, x);
-
-    //Go through every projection pixel coordinate, calculate the rectangle in the panorama sphere
-    //corresponding to the pixel's square and interpolate the pixel color as the mean color of the rectangle
-    for (int y = 0; y < displaySize.y; ++y)
     {
-        for (int x = 0; x < displaySize.x; ++x)
+        std::unique_lock lock(updateDisplayMutex);
+        startUpdateDisplay = true;
+        lock.unlock();
+        updateDisplayCondVar.notify_one();
+        std::this_thread::yield();
+        lock.lock();
+        updateDisplayCondVar.wait(lock, [this](){ return updateDisplayFinished; });
+        updateDisplayFinished = false;
+    }
+}
+
+/*!
+ * \brief Repeatedly project panorama sphere perspective to display projection buffer.
+ *
+ * Repeatedly updates the display projection buffer whenever triggered
+ * by updateDisplayData() and returns as soon as stopped by ~Projector().
+ *
+ * For each triggered update iteration it fills the display projection buffer with a
+ * rectilinear projection of the panorama sphere at the current perspective defined by
+ * zoom level and view angle offset. Pixel colors are interpolated between the two buffers
+ * of arbitrary resolution via a simple area weighting (see also interpolatePixel()).
+ */
+void Projector::updateDisplayDataLoop()
+{
+    //Flat array of panorama sphere image data
+    const sf::Uint8* sourcePixels = nullptr;
+
+    //Cache for projection transformation values
+    std::vector<float> displayTrafosX;
+    std::vector<float> displayTrafosY;
+
+    #ifdef USE_OMP
+    #pragma omp parallel
+    #endif
+    while (!stopUpdateDisplayThread.load())
+    {
+        #ifdef USE_OMP
+        #pragma omp single
+        #endif
         {
-            //Top left and bottom right corner coordinates of the projection pixel transformed to the panorama sphere
-            float tLx = displayTrafosX[x];
-            float tLy = displayTrafosY[(displaySize.x+1)*y + x];
-            float bRx = displayTrafosX[x+1];
-            float bRy = displayTrafosY[(displaySize.x+1)*(y+1) + x + 1];
+            {
+                std::unique_lock lock(updateDisplayMutex);
+                updateDisplayCondVar.wait(lock, [this](){ return (startUpdateDisplay || stopUpdateDisplayThread.load()); });
+                startUpdateDisplay = false;
+            }
 
-            //In case of a 360 degree panorama the transformations might output values that exceed FOV of the scene;
-            //at this point only fix lower boundary to avoid negative individual values but also avoid wrong negative difference (bRx-tLx)
-            if (tLx < 0)
-                tLx += panoSphereSize.x;
-            if (bRx - tLx < 0)
-                bRx += panoSphereSize.x;
+            if (!stopUpdateDisplayThread.load())
+            {
+                sourcePixels = panoSphereData.data();
 
-            //Interpolate current display pixel color from panorama sphere pixels covered by the transformed pixel rectangle
-            interpolatePixel(panoSphereSize, sourcePixels,
-                             {std::ref(displayData[4*(displaySize.x*y + x)]),
-                              std::ref(displayData[4*(displaySize.x*y + x) + 1]),
-                              std::ref(displayData[4*(displaySize.x*y + x) + 2])},
-                             tLx, tLy, bRx, bRy);
+                //Cache final projection transformation values for current perspective as they are reused for every projection pixel below
+
+                displayTrafosX.resize(displaySize.x+1, 0);
+                displayTrafosY.resize((displaySize.x+1)*(displaySize.y+1), 0);
+
+                for (int x = 0; x <= displaySize.x; ++x)
+                    displayTrafosX[x] = displayTrafoX(x);
+
+                for (int y = 0; y <= displaySize.y; ++y)
+                    for (int x = 0; x <= displaySize.x; ++x)
+                        displayTrafosY[(displaySize.x+1)*y + x] = displayTrafoY(y, x);
+            }
+        }
+
+        if (stopUpdateDisplayThread.load())
+            break;
+
+        //Go through every projection pixel coordinate, calculate the rectangle in the panorama sphere
+        //corresponding to the pixel's square and interpolate the pixel color as the mean color of the rectangle
+        #ifdef USE_OMP
+        #pragma omp for collapse(2)
+        #endif
+        for (int y = 0; y < displaySize.y; ++y)
+        {
+            for (int x = 0; x < displaySize.x; ++x)
+            {
+                //Top left and bottom right corner coordinates of the projection pixel transformed to the panorama sphere
+                float tLx = displayTrafosX[x];
+                float tLy = displayTrafosY[(displaySize.x+1)*y + x];
+                float bRx = displayTrafosX[x+1];
+                float bRy = displayTrafosY[(displaySize.x+1)*(y+1) + x + 1];
+
+                //In case of a 360 degree panorama the transformations might output values that exceed FOV of the scene;
+                //at this point only fix lower boundary to avoid negative individual values but also avoid wrong negative difference (bRx-tLx)
+                if (tLx < 0)
+                    tLx += panoSphereSize.x;
+                if (bRx - tLx < 0)
+                    bRx += panoSphereSize.x;
+
+                //Interpolate current display pixel color from panorama sphere pixels covered by the transformed pixel rectangle
+                interpolatePixel(panoSphereSize, sourcePixels,
+                                 {std::ref(displayData[4*(displaySize.x*y + x)]),
+                                  std::ref(displayData[4*(displaySize.x*y + x) + 1]),
+                                  std::ref(displayData[4*(displaySize.x*y + x) + 2])},
+                                 tLx, tLy, bRx, bRy);
+            }
+        }
+
+        #ifdef USE_OMP
+        #pragma omp single
+        #endif
+        {
+            std::unique_lock lock(updateDisplayMutex);
+            updateDisplayFinished = true;
+            lock.unlock();
+            updateDisplayCondVar.notify_one();
         }
     }
 }
@@ -750,6 +848,9 @@ void Projector::mapPicToPanoSphere()
 
     //Go through every sphere pixel coordinate, calculate the rectangle in the picture corresponding
     //to the pixel's square and interpolate the pixel color as the mean color of the rectangle
+    #ifdef USE_OMP
+    #pragma omp parallel for collapse(2)
+    #endif
     for (int y = 0; y < panoSphereSize.y; ++y)
     {
         for (int x = 0; x < panoSphereSize.x; ++x)
@@ -762,7 +863,7 @@ void Projector::mapPicToPanoSphere()
 
             //Pixels might point to out of bounds part of the picture, because picture not always symmetric but sphere is (just ignore them)
             if (bRy <= 0 || tLy >= picSize.y)
-                break;
+                continue;
 
             //Interpolate current panorama sphere pixel color from panorama picture pixels covered by the transformed pixel rectangle
             interpolatePixel(picSize, sourcePixels,

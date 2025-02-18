@@ -25,6 +25,11 @@ if(BUILD_DOCUMENTATION)
     find_package(Doxygen)
 endif()
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+find_package(OpenMP REQUIRED)
+
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
 set(FILENAMES
@@ -57,6 +62,15 @@ set_target_properties("${EXECUTABLE_NAME}-lib" PROPERTIES VERSION ${PROJECT_VERS
 
 target_link_libraries("${EXECUTABLE_NAME}-bin" sfml-graphics sfml-window sfml-system)
 target_link_libraries("${EXECUTABLE_NAME}-lib" sfml-graphics sfml-window sfml-system)
+
+target_compile_options("${EXECUTABLE_NAME}-bin" PRIVATE ${OpenMP_CXX_FLAGS})
+target_compile_options("${EXECUTABLE_NAME}-lib" PRIVATE ${OpenMP_CXX_FLAGS})
+
+target_link_libraries("${EXECUTABLE_NAME}-bin" PRIVATE Threads::Threads)
+target_link_libraries("${EXECUTABLE_NAME}-lib" PRIVATE Threads::Threads)
+
+target_link_libraries("${EXECUTABLE_NAME}-bin" PRIVATE "$<$<LINK_LANGUAGE:CXX>:${OpenMP_CXX_LIB_NAMES}>")
+target_link_libraries("${EXECUTABLE_NAME}-lib" PRIVATE "$<$<LINK_LANGUAGE:CXX>:${OpenMP_CXX_LIB_NAMES}>")
 
 include_directories("${PROJECT_BINARY_DIR}/include")
 include_directories(${SFML_INCLUDE_DIR})

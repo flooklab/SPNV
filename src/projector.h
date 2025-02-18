@@ -30,8 +30,12 @@
 #include <SFML/System/Vector2.hpp>
 
 #include <array>
+#include <atomic>
+#include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 /*!
@@ -64,6 +68,7 @@ class Projector
 {
 public:
     Projector(const std::string& pFileName, const SceneMetaData& pSceneMetaData);   ///< Constructor.
+    ~Projector();                                                                   ///< Destructor.
 
 public:
     void updateDisplaySize(sf::Vector2u pDisplaySize,
@@ -108,6 +113,7 @@ private:
     void updateDisplayFOV(bool pForceRemapSphere = false);  ///< Adjust parameters and transformations after display size or zoom change.
     //
     void updateDisplayData();                               ///< Project current panorama sphere perspective to display projection buffer.
+    void updateDisplayDataLoop();                           ///< Repeatedly project panorama sphere perspective to display projection buffer.
     void mapPicToPanoSphere();                              ///< Project the loaded picture onto the panorama sphere.
     //
     void interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
@@ -158,6 +164,13 @@ private:
     const float panoSphereRemapHystTargOvers;   //Target projection oversampling (try reach this value when adjusting pano. sphere resol.)
     const float panoSphereRemapHystMaxOvers;    //Max. projection oversampling thresh. (decrease pano. sphere resolution when zoom out more)
     float panoSphereRemapHystMaxF;      //Max. f beyond which oversampl. cannot be restored by pano. sphere re-calc. (limited picture res.)
+    //
+    std::thread updateDisplayThread;                //Thread to update display projection to current perspective when triggered to do so
+    std::atomic_bool stopUpdateDisplayThread;       //Flag to stop the display projection updater thread
+    std::mutex updateDisplayMutex;                  //Mutex for synchronization between updateDisplayData() and updateDisplayDataLoop()
+    std::condition_variable updateDisplayCondVar;   //Cond. var. for synchronization between updateDisplayData() and updateDisplayDataLoop()
+    bool startUpdateDisplay;                        //Flag for triggering one update cycle of updateDisplayDataLoop()
+    bool updateDisplayFinished;                     //Flag for signalling to updateDisplayData() that the triggered update cycle has finished
 };
 
 #endif // SPNV_PROJECTOR_H

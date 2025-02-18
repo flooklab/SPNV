@@ -36,7 +36,7 @@ which includes JPEG and PNG but does not include TIFF, for instance.
 
 Building the project can be configured with [CMake](https://cmake.org/).  
 
-Requires [SFML](https://github.com/SFML/SFML).  
+Requires [SFML 3](https://github.com/SFML/SFML).  
 
 Notes:
 - Building the documentation requires [Doxygen](https://github.com/doxygen/doxygen) (optional).

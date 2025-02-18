@@ -25,17 +25,19 @@
 #include "constants.h"
 #include "version.h"
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/VideoMode.hpp>
-#include <SFML/Window/WindowStyle.hpp>
+#include <SFML/Window/WindowEnums.hpp>
 
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <thread>
 
@@ -50,7 +52,7 @@ PanoramaWindow::PanoramaWindow() :
     fileName(""),
     //
     panoTexture(),
-    panoSprite(),
+    panoSprite(panoTexture),
     //
     projector(nullptr),
     //
@@ -95,7 +97,8 @@ PanoramaWindow::PanoramaWindow() :
  * \param pRequestPrev May be set to true when this function returns to request from the caller that a "previous" panorama picture be shown.
  * \param pRequestNext May be set to true when this function returns to request from the caller that a "next" panorama picture be shown.
  * \param pFullscreenMode Immediately start in fullscreen mode.
- * \return If could successfully load \p pFileName (and picture dimensions match information from \p pSceneMetaData).
+ * \return If could successfully load \p pFileName (picture dimensions must match information from \p pSceneMetaData)
+ *         and display the panorama scene and process the user interactions without any errors.
  */
 bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSceneMetaData, bool& pRequestPrev, bool& pRequestNext,
                          const bool pFullscreenMode)
@@ -126,7 +129,16 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
 
     //Initialize panorama scene with current window size and reset perspective
 
-    updateDisplaySize();
+    try
+    {
+        updateDisplaySize();
+    }
+    catch (const std::runtime_error& exc)
+    {
+        std::cerr<<"ERROR: "<<exc.what()<<std::endl;
+        projector.reset();  //Delete the projector
+        return false;
+    }
 
     projector->updateView(0, 0, 0);
 
@@ -168,7 +180,10 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
     //Reset locked theta angle mouse drag mode
     mouseDragLockThetaAngle = false;
 
-    sf::Event event;
+    //Control return value from inside the loop (when exiting loop due to error)
+    bool errorOccurred = false;
+
+    std::optional<sf::Event> event;
 
     while (window.isOpen())
     {
@@ -180,214 +195,201 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
          *   for those is done below the event loop (hence need to exit the loop) in order to skip
          *   unnecessary, expensive recalculations for each of many consecutive events.
          */
-        while ((!(mouseDragging || windowResizing) && window.waitEvent(event)) ||
-               ( (mouseDragging || windowResizing) && window.pollEvent(event)))
+        while ((!(mouseDragging || windowResizing) && (event = window.waitEvent())) ||
+               ( (mouseDragging || windowResizing) && (event = window.pollEvent())))
         {
-            switch (event.type)
+            if (event->is<sf::Event::Closed>())
             {
-                case sf::Event::Closed:
+                window.close();
+            }
+            else if (event->is<sf::Event::Resized>())
+            {
+                //Do not resize scene here, but set resize flag so that resizing will be handled once below the event loop after all
+                //pending events have been processed (this ignores/groups consecutive resize events of a single resize operation)
+                windowResizing = true;
+            }
+            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseWheelScrolled>())
+            {
+                if (mouseEvent->delta > 0)
+                    zoomIn();
+                else if (mouseEvent->delta < 0)
+                    zoomOut();
+            }
+            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseButtonPressed>())
+            {
+                //Enable view angle manipulation via mouse movement, which will be handled below the event loop each time when all
+                //pending events have been processed (this groups/ignores small consecutive move events from continuous mouse movement)
+                if (mouseEvent->button == sf::Mouse::Button::Left)
+                    enableMouseDragging();
+            }
+            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseButtonReleased>())
+            {
+                //Disable view angle manipulation via mouse movement again
+                if (mouseEvent->button == sf::Mouse::Button::Left)
+                    mouseDragging = false;
+            }
+            else if (const auto *const mouseEvent = event->getIf<sf::Event::MouseMoved>())
+            {
+                //Capture current mouse position if view angle manipulation via mouse movement is enabled;
+                //actual movement logic happens below the event loop
+                if (mouseDragging)
                 {
-                    window.close();
-                    break;
+                    //After the mouse left a window edge and hence was reset to the opposite edge, need to skip
+                    //pending mouse move events until current event's mouse position matches set mouse position again
+                    if (dragWaitForWrap)
+                    {
+                        if (dragCurrentMousePos.x == mouseEvent->position.x && dragCurrentMousePos.y == mouseEvent->position.y)
+                            dragWaitForWrap = false;
+                    }
+                    else
+                    {
+                        dragCurrentMousePos.x = mouseEvent->position.x;
+                        dragCurrentMousePos.y = mouseEvent->position.y;
+                    }
                 }
-                case sf::Event::Resized:
+            }
+            else if (const auto *const keyEvent = event->getIf<sf::Event::KeyPressed>())
+            {
+                switch (keyEvent->code)
                 {
-                    //Do not resize scene here, but set resize flag so that resizing will be handled once below the event loop after all
-                    //pending events have been processed (this ignores/groups consecutive resize events of a single resize operation)
-                    windowResizing = true;
-                    break;
-                }
-                case sf::Event::MouseWheelScrolled:
-                {
-                    if (event.mouseWheelScroll.delta > 0)
+                    case sf::Keyboard::Key::Left:
+                    {
+                        //Turn perspective to the left (fixed step size)
+                        projector->updateView(projector->getZoom(),
+                                              projector->getOffsetPhi() - 5.*Constants::pi/180.,
+                                              projector->getOffsetTheta());
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::Right:
+                    {
+                        //Turn perspective to the right (fixed step size)
+                        projector->updateView(projector->getZoom(),
+                                              projector->getOffsetPhi() + 5.*Constants::pi/180.,
+                                              projector->getOffsetTheta());
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::Up:
+                    {
+                        //Turn perspective upwards (fixed step size)
+                        projector->updateView(projector->getZoom(),
+                                              projector->getOffsetPhi(),
+                                              projector->getOffsetTheta() - 5*Constants::pi/180.);
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::Down:
+                    {
+                        //Turn perspective downwards (fixed step size)
+                        projector->updateView(projector->getZoom(),
+                                              projector->getOffsetPhi(),
+                                              projector->getOffsetTheta() + 5*Constants::pi/180.);
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::Space:
+                    {
+                        //Center the horizon line and update window title as this might change zoom level
+                        projector->centerHorizon();
+                        updateWindowTitle();
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::Add:
+                    {
                         zoomIn();
-                    else if (event.mouseWheelScroll.delta < 0)
+                        break;
+                    }
+                    case sf::Keyboard::Key::Subtract:
+                    {
                         zoomOut();
-
-                    break;
-                }
-                case sf::Event::MouseButtonPressed:
-                {
-                    //Enable view angle manipulation via mouse movement, which will be handled below the event loop each time when all
-                    //pending events have been processed (this groups/ignores small consecutive move events from continuous mouse movement)
-                    if (event.mouseButton.button == sf::Mouse::Button::Left)
-                        enableMouseDragging();
-                    break;
-                }
-                case sf::Event::MouseButtonReleased:
-                {
-                    //Disable view angle manipulation via mouse movement again
-                    if (event.mouseButton.button == sf::Mouse::Button::Left)
-                        mouseDragging = false;
-                    break;
-                }
-                case sf::Event::MouseMoved:
-                {
-                    //Capture current mouse position if view angle manipulation via mouse movement is enabled;
-                    //actual movement logic happens below the event loop
-                    if (mouseDragging)
-                    {
-                        //After the mouse left a window edge and hence was reset to the opposite edge, need to skip
-                        //pending mouse move events until current event's mouse position matches set mouse position again
-                        if (dragWaitForWrap)
-                        {
-                            if (dragCurrentMousePos.x == event.mouseMove.x && dragCurrentMousePos.y == event.mouseMove.y)
-                                dragWaitForWrap = false;
-                            else
-                                break;
-                        }
-
-                        dragCurrentMousePos.x = event.mouseMove.x;
-                        dragCurrentMousePos.y = event.mouseMove.y;
+                        break;
                     }
-                    break;
-                }
-                case sf::Event::KeyPressed:
-                {
-                    switch (event.key.code)
+                    case sf::Keyboard::Key::Num0:
+                    case sf::Keyboard::Key::Numpad0:
                     {
-                        case sf::Keyboard::Key::Left:
-                        {
-                            //Turn perspective to the left (fixed step size)
-                            projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi() - 5.*Constants::pi/180.,
-                                                  projector->getOffsetTheta());
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Right:
-                        {
-                            //Turn perspective to the right (fixed step size)
-                            projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi() + 5.*Constants::pi/180.,
-                                                  projector->getOffsetTheta());
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Up:
-                        {
-                            //Turn perspective upwards (fixed step size)
-                            projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi(),
-                                                  projector->getOffsetTheta() - 5*Constants::pi/180.);
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Down:
-                        {
-                            //Turn perspective downwards (fixed step size)
-                            projector->updateView(projector->getZoom(),
-                                                  projector->getOffsetPhi(),
-                                                  projector->getOffsetTheta() + 5*Constants::pi/180.);
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Space:
-                        {
-                            //Center the horizon line and update window title as this might change zoom level
-                            projector->centerHorizon();
-                            updateWindowTitle();
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Add:
-                        {
-                            zoomIn();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Subtract:
-                        {
-                            zoomOut();
-                            break;
-                        }
-                        case sf::Keyboard::Key::Num0:
-                        case sf::Keyboard::Key::Numpad0:
-                        {
-                            //Reset to minimum possible zoom level (!CTRL) or center horizon and reset to minimum possible zoom level
-                            //that can just preserve the centered horizon (CTRL); update window title for resulting zoom level
-                            if (event.key.control)
-                                projector->updateView(-1, projector->getOffsetPhi(), 0);
-                            else
-                                projector->updateView(0, projector->getOffsetPhi(), projector->getOffsetTheta());
+                        //Reset to minimum possible zoom level (!CTRL) or center horizon and reset to minimum possible zoom level
+                        //that can just preserve the centered horizon (CTRL); update window title for resulting zoom level
+                        if (keyEvent->control)
+                            projector->updateView(-1, projector->getOffsetPhi(), 0);
+                        else
+                            projector->updateView(0, projector->getOffsetPhi(), projector->getOffsetTheta());
 
-                            updateWindowTitle();
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::H:
-                        {
-                            //Adjust zoom so that horizontal field of view is 65 degrees; update window title for changed zoom level
-                            projector->updateView(projector->getRequiredZoomFromHFOV(65.f * Constants::pi / 180.f),
-                                                  projector->getOffsetPhi(), projector->getOffsetTheta());
-                            updateWindowTitle();
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::V:
-                        {
-                            //Adjust zoom so that vertical field of view is 45 degrees; update window title for changed zoom level
-                            projector->updateView(projector->getRequiredZoomFromVFOV(45.f * Constants::pi / 180.f),
-                                                  projector->getOffsetPhi(), projector->getOffsetTheta());
-                            updateWindowTitle();
-                            renderPanoramaView();
-                            break;
-                        }
-                        case sf::Keyboard::Key::L:
-                        {
-                            //Toggle locked theta angle mouse drag mode
-                            mouseDragLockThetaAngle = !mouseDragLockThetaAngle;
-                            updateWindowTitle();
-                            break;
-                        }
-                        case sf::Keyboard::Key::F:
-                        case sf::Keyboard::Key::F11:
-                        {
-                            //Toggle fullscreen mode
-                            fullscreenMode = !fullscreenMode;
-
-                            //Create new window
-                            createWindow(fullscreenMode);
-
-                            //Update window size
-                            currentWindowSize = window.getSize();
-
-                            //Update title and display
-                            updateWindowTitle();
-                            renderPanoramaView();
-
-                            break;
-                        }
-                        case sf::Keyboard::Key::W:
-                        {
-                            if (event.key.control)
-                                window.close();
-                            break;
-                        }
-                        case sf::Keyboard::Key::A:
-                        {
-                            if (event.key.control)
-                            {
-                                pRequestPrev = true;
-                                window.close();
-                            }
-                            break;
-                        }
-                        case sf::Keyboard::Key::S:
-                        {
-                            if (event.key.control)
-                            {
-                                pRequestNext = true;
-                                window.close();
-                            }
-                            break;
-                        }
-                        default:
-                            break;
+                        updateWindowTitle();
+                        renderPanoramaView();
+                        break;
                     }
-                    break;
+                    case sf::Keyboard::Key::H:
+                    {
+                        //Adjust zoom so that horizontal field of view is 65 degrees; update window title for changed zoom level
+                        projector->updateView(projector->getRequiredZoomFromHFOV(65.f * Constants::pi / 180.f),
+                                              projector->getOffsetPhi(), projector->getOffsetTheta());
+                        updateWindowTitle();
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::V:
+                    {
+                        //Adjust zoom so that vertical field of view is 45 degrees; update window title for changed zoom level
+                        projector->updateView(projector->getRequiredZoomFromVFOV(45.f * Constants::pi / 180.f),
+                                              projector->getOffsetPhi(), projector->getOffsetTheta());
+                        updateWindowTitle();
+                        renderPanoramaView();
+                        break;
+                    }
+                    case sf::Keyboard::Key::L:
+                    {
+                        //Toggle locked theta angle mouse drag mode
+                        mouseDragLockThetaAngle = !mouseDragLockThetaAngle;
+                        updateWindowTitle();
+                        break;
+                    }
+                    case sf::Keyboard::Key::F:
+                    case sf::Keyboard::Key::F11:
+                    {
+                        //Toggle fullscreen mode
+                        fullscreenMode = !fullscreenMode;
+
+                        //Create new window
+                        createWindow(fullscreenMode);
+
+                        //Update window size
+                        currentWindowSize = window.getSize();
+
+                        //Update title and display
+                        updateWindowTitle();
+                        renderPanoramaView();
+
+                        break;
+                    }
+                    case sf::Keyboard::Key::W:
+                    {
+                        if (keyEvent->control)
+                            window.close();
+                        break;
+                    }
+                    case sf::Keyboard::Key::A:
+                    {
+                        if (keyEvent->control)
+                        {
+                            pRequestPrev = true;
+                            window.close();
+                        }
+                        break;
+                    }
+                    case sf::Keyboard::Key::S:
+                    {
+                        if (keyEvent->control)
+                        {
+                            pRequestNext = true;
+                            window.close();
+                        }
+                        break;
+                    }
+                    default:
+                        break;
                 }
-                default:
-                    break;
             }
         }
 
@@ -405,7 +407,17 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
 
             currentWindowSize = window.getSize();
 
-            updateDisplaySize();
+            try
+            {
+                updateDisplaySize();
+            }
+            catch (const std::runtime_error& exc)
+            {
+                std::cerr<<"ERROR: "<<exc.what()<<std::endl;
+                errorOccurred = true;
+                window.close();
+                continue;   //Window now closed, hence will exit while loop and return
+            }
 
             renderPanoramaView();
         }
@@ -462,7 +474,7 @@ bool PanoramaWindow::run(const std::string& pFileName, const SceneMetaData& pSce
     //Delete the projector
     projector.reset();
 
-    return true;
+    return !errorOccurred;
 }
 
 //Private
@@ -485,7 +497,7 @@ void PanoramaWindow::createWindow(bool pFullscreenMode)
     else
         pFullscreenMode = false;
 
-    window.create(videoMode, "", pFullscreenMode ? sf::Style::Fullscreen : sf::Style::Default);
+    window.create(videoMode, "", pFullscreenMode ? sf::State::Fullscreen : sf::State::Windowed);
 
     window.setVerticalSyncEnabled(true);
 }
@@ -521,6 +533,8 @@ void PanoramaWindow::updateWindowTitle()
  * See also Projector::updateDisplaySize().
  *
  * Note: Returns immediately, if no projector is defined (no panorama window running (see run()).
+ *
+ * \throws std::runtime_error Resizing of the image texture failed (should not fail normally).
  */
 void PanoramaWindow::updateDisplaySize()
 {
@@ -528,12 +542,13 @@ void PanoramaWindow::updateDisplaySize()
         return;
 
     //Need to explicitly update resolution of displayed window content
-    sf::View view({0, 0, static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)});
+    sf::View view(sf::FloatRect({0.f, 0.f}, {static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)}));
     window.setView(view);
 
     projector->updateDisplaySize(window.getSize());
 
-    panoTexture.create(window.getSize().x, window.getSize().y);
+    if (!panoTexture.resize({window.getSize().x, window.getSize().y}))
+        throw std::runtime_error("Could not resize the image texture.");
 }
 
 //

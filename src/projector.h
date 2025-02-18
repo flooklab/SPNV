@@ -25,12 +25,12 @@
 
 #include "scenemetadata.h"
 
-#include <SFML/Config.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -85,7 +85,7 @@ public:
     //
     sf::Vector2f getViewAngle(sf::Vector2i pDisplayPosition) const; ///< Get angle pointed to by specific pixel in the display projection.
     //
-    const std::vector<sf::Uint8>& getDisplayData() const;   ///< Get the display projection of the panorama sphere for current perspective.
+    const std::vector<std::uint8_t>& getDisplayData() const;    ///< Get the display projection of the panorama sphere for current perspective.
 
 private:
     sf::Vector2f calcTopLeftFOV() const;                    ///< Calculate 'phi' and 'theta' angle of cropped picture's top left corner.
@@ -114,8 +114,8 @@ private:
     void updateDisplayDataLoop();                           ///< Repeatedly project panorama sphere perspective to display projection buffer.
     void mapPicToPanoSphere();                              ///< Project the loaded picture onto the panorama sphere.
     //
-    void interpolatePixel(sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                          sf::Uint8& pTargetPixelR, sf::Uint8& pTargetPixelG, sf::Uint8& pTargetPixelB,
+    void interpolatePixel(sf::Vector2i pSourceImageSize, const std::uint8_t *const pSourcePixels,
+                          std::uint8_t& pTargetPixelR, std::uint8_t& pTargetPixelG, std::uint8_t& pTargetPixelB,
                           float pTLx, float pTLy, float pBRx, float pBRy);      ///< \brief Interpolate target pixel color from
                                                                                 ///  rectangle in source image by area weighting.
 
@@ -152,13 +152,13 @@ private:
     //
     sf::Vector2i displaySize;                   ///< Target size for the rectilinear display projection.
     sf::Vector2f displayFOV;                    ///< Field of view covered by projection (depends on 'displaySize' aspect ratio and 'zoom').
-    std::vector<sf::Uint8> displayData;         ///< Data buffer for display projection.
+    std::vector<std::uint8_t> displayData;      ///< Data buffer for display projection.
     //
     std::vector<float> staticDisplayTrafosX;    ///< Cache for view angle-indep. part of horizontal trafo from display pos. to pano. sphere.
     std::vector<float> staticDisplayTrafosY;    ///< Cache for view angle-indep. part of vertical trafo from display pos. to pano. sphere.
     //
     sf::Vector2i panoSphereSize;                ///< Image size of the panorama sphere.
-    std::vector<sf::Uint8> panoSphereData;      ///< Data buffer for the panorama sphere.
+    std::vector<std::uint8_t> panoSphereData;   ///< Data buffer for the panorama sphere.
     //
     const float panoSphereRemapHystMinOvers;    ///< Min. projection oversampling thresh. (increase pano. sphere resolution when zoom in more).
     const float panoSphereRemapHystTargOvers;   ///< Target projection oversampling (try reach this value when adjusting pano. sphere resol.).

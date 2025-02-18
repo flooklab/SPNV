@@ -339,7 +339,7 @@ sf::Vector2f Projector::getViewAngle(const sf::Vector2i pDisplayPosition) const
  *
  * \return Image data of display projection as flat array.
  */
-const std::vector<sf::Uint8>& Projector::getDisplayData() const
+const std::vector<std::uint8_t>& Projector::getDisplayData() const
 {
     return displayData;
 }
@@ -683,7 +683,7 @@ void Projector::updateDisplayData()
 void Projector::updateDisplayDataLoop()
 {
     //Flat array of panorama sphere image data
-    const sf::Uint8* sourcePixels = nullptr;
+    const std::uint8_t* sourcePixels = nullptr;
 
     //Cache for projection transformation values
     std::vector<float> displayTrafosX;
@@ -880,7 +880,7 @@ void Projector::mapPicToPanoSphere()
     panoSphereData.resize(4 * panoSphereSize.x * panoSphereSize.y, 255.);
 
     //Flat array of loaded panorama picture data
-    const sf::Uint8* sourcePixels = pic.getPixelsPtr();
+    const std::uint8_t* sourcePixels = pic.getPixelsPtr();
 
     //Cache transformation values as they are reused for every sphere pixel below
 
@@ -946,8 +946,8 @@ void Projector::mapPicToPanoSphere()
  * \param pBRx Horizontal coordinate of source image rectangle's bottom right corner.
  * \param pBRy Vertical coordinate of source image rectangle's bottom right corner.
  */
-void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const sf::Uint8 *const pSourcePixels,
-                                 sf::Uint8& pTargetPixelR, sf::Uint8& pTargetPixelG, sf::Uint8& pTargetPixelB,
+void Projector::interpolatePixel(const sf::Vector2i pSourceImageSize, const std::uint8_t *const pSourcePixels,
+                                 std::uint8_t& pTargetPixelR, std::uint8_t& pTargetPixelG, std::uint8_t& pTargetPixelB,
                                  const float pTLx, const float pTLy, const float pBRx, const float pBRy)
 {
     //Coordinates of topmost and leftmost source pixels that are at least partially covered by the transformed rectangle
